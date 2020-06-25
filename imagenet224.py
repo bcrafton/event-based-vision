@@ -138,6 +138,7 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2, beta_1=0.9, beta_2=0.99
 def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
         out = model.train(x)
+        out = tf.reshape(out, (8, 5, 6, 12))
         loss = yolo_loss(out, coord, obj, no_obj, cat, vld)
     
     grad = tape.gradient(loss, params)
@@ -181,7 +182,9 @@ def run_train():
             
             # print (np.shape(coord))
             
-            draw_box('image.jpg', x[0, :, :, -1], coord[0], out.numpy()[0], 1)
+            # nb, nd, _, _, _ = np.shape(coord)
+            nd = np.count_nonzero(obj[0])
+            draw_box('image.jpg', x[0, :, :, -1], coord[0], out.numpy()[0], nd)
             
             '''
             loss, correct, grad = gradients(model, x, y)

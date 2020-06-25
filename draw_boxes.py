@@ -76,9 +76,9 @@ def draw_box(name, image, label, pred, nbox):
     objs      = label[..., 4]
     # print (np.shape(objs))
     true_boxs = grid_to_pix(label[..., 0:4])
-    # boxs1     = grid_to_pix(pred[..., 0:4])
-    # boxs2     = grid_to_pix(pred[..., 5:9])
-    # iou = calc_iou(true_boxs, boxs1, boxs2)
+    boxs1     = grid_to_pix(pred[..., 0:4])
+    boxs2     = grid_to_pix(pred[..., 5:9])
+    iou = calc_iou(true_boxs, boxs1, boxs2)
 
     true_image = np.copy(image)
     pred_image = np.copy(image)
@@ -90,7 +90,7 @@ def draw_box(name, image, label, pred, nbox):
 
         box = np.array(true_boxs[b][xc][yc], dtype=int)
         draw_box_help(true_image, box, colors[b])
-        '''
+        
         iou1 = iou[b][xc][yc][0]
         iou2 = iou[b][xc][yc][1]
         if iou1 > iou2:
@@ -98,7 +98,7 @@ def draw_box(name, image, label, pred, nbox):
         else:
             box = np.array(boxs2[xc][yc], dtype=int)
         draw_box_help(pred_image, box, colors[b])
-        '''
+        
     concat = np.concatenate((true_image, pred_image), axis=1)
     plt.imsave(name, concat)
 
