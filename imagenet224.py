@@ -87,7 +87,7 @@ def run_train():
     total_loss = 0
     batch_size = 1
 
-    load = Loader('/home/bcrafton3/Data_HDD/keras_imagenet/keras_imagenet_train/', total // batch_size, batch_size, 8)
+    load = Loader('', total // batch_size, batch_size, 8)
     start = time.time()
 
     for batch in range(0, total, batch_size):

@@ -7,31 +7,8 @@ import random
 from multiprocessing import Process, Queue
 
 #########################################
+
 '''
-import torch
-import torchvision
-from torchvision import transforms
-
-preprocess_transform = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
-
-def preprocess(filename):
-    image = Image.open(filename).convert('RGB')
-    image = preprocess_transform(image)
-    print (filename)
-    return image.numpy()
-'''
-#########################################
-
-# if there is a mismatch between this and pytorch
-# would first guess the np.floor we are using here.
-# but the best thing we found to do
-# was diff this and 'pytorch_resnet.py' for np.std(image) at various places.
-
 def preprocess(filename):
     image = Image.open(filename).convert('RGB')
     
@@ -58,6 +35,11 @@ def preprocess(filename):
     
     image = image // 2
     
+    return image
+'''
+
+def preprocess(filename):
+    image = np.load(filename)
     return image
 
 #########################################
@@ -99,8 +81,10 @@ class Loader:
         self.labels = []
         for subdir, dirs, files in os.walk(path):
             for file in files:
+                '''
                 if file in ['keras_imagenet_val.py', 'keras_imagenet_train.py']:
                     continue
+                '''
                 
                 self.images.append(os.path.join(subdir, file))
                 label = int(subdir.split('/')[-1])
@@ -108,14 +92,18 @@ class Loader:
         
         ##############################
 
+        '''
         merge = list(zip(self.images, self.labels))
         random.shuffle(merge)
         self.images, self.labels = zip(*merge)
+        '''
 
+        '''
         remainder = len(self.images) % self.batch_size
         if remainder: 
             self.images = self.images[:(-remainder)]
             self.labels = self.labels[:(-remainder)]
+        '''
 
         # print (len(self.images))
         # print (len(self.labels))
