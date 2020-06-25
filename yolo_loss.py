@@ -26,9 +26,9 @@ offset = tf.constant(offset_np, dtype=tf.float32)
 
 def grid_to_pix(box):
     pix_box_xy = 48. * box[:, :, :, :, 0:2] + offset
-    # TODO: 448
-    pix_box_wh = 448. * box[:, :, :, :, 2:4]
-    pix_box = tf.concat((pix_box_xy, pix_box_wh), axis=4)
+    pix_box_w = box[:, :, :, :, 0:1] * 288. 
+    pix_box_h = box[:, :, :, :, 1:2] * 240.
+    pix_box = tf.concat((pix_box_xy, pix_box_w, pix_box_h), axis=4)
     return pix_box
 
 def calc_iou(boxA, boxB, realBox):

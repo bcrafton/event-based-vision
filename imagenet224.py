@@ -4,6 +4,7 @@ import tensorflow as tf
 from layers import *
 from load import Loader
 import time
+import matplotlib.pyplot as plt
 
 ####################################
 
@@ -12,6 +13,7 @@ for device in gpu_devices:
     tf.config.experimental.set_memory_growth(device, True)
 
 from yolo_loss import yolo_loss
+from draw_boxes import draw_box
 
 '''
 gpus = tf.config.experimental.list_physical_devices('GPU')
@@ -139,7 +141,7 @@ def gradients(model, x, coord, obj, no_obj, cat, vld):
         loss = yolo_loss(out, coord, obj, no_obj, cat, vld)
     
     grad = tape.gradient(loss, params)
-    return loss, grad
+    return out, loss, grad
 
 ####################################
 
@@ -166,10 +168,20 @@ def run_train():
             x = xs[s:e].astype(np.float32)
             coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
             
-            loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
+            out, loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
             optimizer.apply_gradients(zip(grad, params))
             
             total_loss += loss.numpy()
+            
+            # plt.imshow(np.mean(x, axis=(0, 3)))
+            # plt.imshow(x[0, :, :, 0])
+            # plt.show()
+            
+            # print (np.shape(out.numpy()))
+            
+            # print (np.shape(coord))
+            
+            draw_box('image.jpg', x[0, :, :, -1], coord[0], out.numpy()[0], 1)
             
             '''
             loss, correct, grad = gradients(model, x, y)
