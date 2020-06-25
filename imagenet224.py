@@ -144,11 +144,9 @@ def gradients(model, x, coord, obj, no_obj, cat, vld):
 ####################################
 
 def run_train():
-    '''
-    total = 100
-    total_correct = 0
+    # total = 100
+    # total_correct = 0
     total_loss = 0
-    '''
     batch_size = 8
     
     # load = Loader('', total // batch_size, batch_size, 8)
@@ -157,41 +155,42 @@ def run_train():
     
     start = time.time()
 
-    for ex in range(0, len(xs), batch_size):
-        # while load.empty(): pass # print ('empty')
-        
-        # x, y = load.pop()
-        
-        s = ex
-        e = ex + batch_size
-        if e > len(xs): continue
-        
-        print (ex)
-        
-        x = xs[s:e].astype(np.float32)
-        print (np.shape(x))
-        coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
-        
-        loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
-        optimizer.apply_gradients(zip(grad, params))
-        
-        '''
-        loss, correct, grad = gradients(model, x, y)
-        optimizer.apply_gradients(zip(grad, params))
-        total_loss += loss.numpy()
-        
-        total_correct += correct.numpy()
-        
-        acc = round(total_correct / (batch + batch_size), 3)
-        avg_loss = total_loss / (batch + batch_size)
-        
-        if (batch + batch_size) % (batch_size * 100) == 0:
-            img_per_sec = (batch + batch_size) / (time.time() - start)
-            print (batch + batch_size, img_per_sec, acc, avg_loss)
-        '''
+    for epoch in range(10):
+        for ex in range(0, len(xs), batch_size):
+            # while load.empty(): pass # print ('empty')
+            
+            # x, y = load.pop()
+            
+            s = ex
+            e = ex + batch_size
+            if e > len(xs): continue
+            
+            x = xs[s:e].astype(np.float32)
+            coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
+            
+            loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
+            optimizer.apply_gradients(zip(grad, params))
+            
+            total_loss += loss.numpy()
+            print (loss.numpy())
+            
+            '''
+            loss, correct, grad = gradients(model, x, y)
+            optimizer.apply_gradients(zip(grad, params))
+            total_loss += loss.numpy()
+            
+            total_correct += correct.numpy()
+            
+            acc = round(total_correct / (batch + batch_size), 3)
+            avg_loss = total_loss / (batch + batch_size)
+            
+            if (batch + batch_size) % (batch_size * 100) == 0:
+                img_per_sec = (batch + batch_size) / (time.time() - start)
+                print (batch + batch_size, img_per_sec, acc, avg_loss)
+            '''
 
-    trained_weights = model.get_weights()
-    np.save('trained_weights', trained_weights)
+        # trained_weights = model.get_weights()
+        # np.save('trained_weights', trained_weights)
 
 ####################################
 

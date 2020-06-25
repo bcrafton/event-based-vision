@@ -76,8 +76,8 @@ class conv_block(layer):
         conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
         mean, var = tf.nn.moments(conv, axes=[0,1,2])
         bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)        
-        if self.relu: out = tf.nn.relu(conv)
-        else:         out = conv
+        if self.relu: out = tf.nn.relu(bn)
+        else:         out = bn
         return out 
     
     def get_weights(self):
