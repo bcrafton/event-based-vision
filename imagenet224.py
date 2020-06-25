@@ -93,11 +93,11 @@ def det_tensor(dets, max_nd):
         w = np.clip(w, 0, 1)
         h = np.clip(h, 0, 1)
         
-        coord[idx, yc, xc, :] = np.array([x, y, w, h, 1.])
-        obj[idx, yc, xc] = 1.
+        coord [idx, yc, xc, :] = np.array([y, x, h, w, 1.])
+        obj   [idx, yc, xc] = 1.
         no_obj[idx, yc, xc] = 0.
-        cat[idx, yc, xc] = c
-        vld[idx, :, :] = 1.
+        cat   [idx, yc, xc] = c
+        vld   [idx, :, :] = 1.
         
     return coord, obj, no_obj, cat, vld
 
