@@ -56,39 +56,45 @@ def create_labels(dets):
         coord, obj, no_obj, cat, vld = det_tensor(dets[b], max_nd)
         coords.append(coord); objs.append(obj); no_objs.append(no_obj); cats.append(cat); vlds.append(vld)
     
-    coords  = np.stack(coords, axis=0)
-    objs    = np.stack(objs, axis=0)
-    no_objs = np.stack(no_objs, axis=0)
-    cats    = np.stack(cats, axis=0)
-    vlds    = np.stack(vlds, axis=0)
+    coords  = np.stack(coords, axis=0).astype(np.float32)
+    objs    = np.stack(objs, axis=0).astype(np.float32)
+    no_objs = np.stack(no_objs, axis=0).astype(np.float32)
+    cats    = np.stack(cats, axis=0).astype(np.float32)
+    vlds    = np.stack(vlds, axis=0).astype(np.float32)
 
     return coords, objs, no_objs, cats, vlds
 
-def det_tensor(dets, ndets):
+def det_tensor(dets, max_nd):
 
-    coord   = np.zeros(shape=[ndets, 7, 7, 5])
-    obj     = np.zeros(shape=[ndets, 7, 7])
-    no_obj  = np.ones(shape=[ndets, 7, 7])
-    cat     = np.zeros(shape=[ndets, 7, 7])
-    vld     = np.zeros(shape=[ndets, 7, 7])
+    coord   = np.zeros(shape=[max_nd, 5, 6, 5])
+    obj     = np.zeros(shape=[max_nd, 5, 6])
+    no_obj  = np.ones(shape=[max_nd, 5, 6])
+    cat     = np.zeros(shape=[max_nd, 5, 6])
+    vld     = np.zeros(shape=[max_nd, 5, 6])
     
-    for idx in range(ndets):
-        _, x, y, w, h, c, _, _ = dets[idx]
-        x = x + 0.5 * w
-        y = y + 0.5 * h
+    for idx in range(len(dets)):
 
-        xc = int(x) // 64
-        yc = int(y) // 64
+        _, x, y, w, h, c, _, _ = dets[idx]
+        x = np.clip(x + 0.5 * w, 0, 288)
+        y = np.clip(y + 0.5 * h, 0, 240)
+
+        xc = int(np.clip(x // 48, 0, 5))
+        yc = int(np.clip(y // 48, 0, 4))
         
         x = (x - xc * 48.) / 48. # might want to clip this to zero
         y = (y - yc * 48.) / 48. # might want to clip this to zero
         w = w / 288.
         h = h / 240.
         
-        coord[idx, xc, yc, :] = np.array([x, y, w, h, 1.])
-        obj[idx, xc, yc] = 1.
-        no_obj[idx, xc, yc] = 0.
-        cat[idx, xc, yc] = c
+        x = np.clip(x, 0, 1)
+        y = np.clip(x, 0, 1)
+        w = np.clip(w, 0, 1)
+        h = np.clip(h, 0, 1)
+        
+        coord[idx, yc, xc, :] = np.array([x, y, w, h, 1.])
+        obj[idx, yc, xc] = 1.
+        no_obj[idx, yc, xc] = 0.
+        cat[idx, yc, xc] = c
         vld[idx, :, :] = 1.
         
     return coord, obj, no_obj, cat, vld
@@ -160,7 +166,10 @@ def run_train():
         e = ex + batch_size
         if e > len(xs): continue
         
+        print (ex)
+        
         x = xs[s:e].astype(np.float32)
+        print (np.shape(x))
         coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
         
         loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
