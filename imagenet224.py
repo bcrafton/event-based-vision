@@ -82,11 +82,10 @@ def collect(model, x, y):
 
 def run_train():
 
-    # total = 1281150
-    total = 100000
+    total = 100
     total_correct = 0
     total_loss = 0
-    batch_size = 50
+    batch_size = 1
 
     load = Loader('/home/bcrafton3/Data_HDD/keras_imagenet/keras_imagenet_train/', total // batch_size, batch_size, 8)
     start = time.time()
