@@ -9,71 +9,6 @@ from bc_utils.init_tensor import init_matrix
 
 #############
 
-# https://stackoverflow.com/questions/59656219/override-tf-floor-gradient
-
-# this would also work:
-# https://www.tensorflow.org/api_docs/python/tf/grad_pass_through
-
-@tf.custom_gradient
-def floor_no_grad(x):
-
-    def grad(dy):
-        return dy
-    
-    return tf.floor(x), grad
-    
-#############
-    
-@tf.custom_gradient
-def round_no_grad(x):
-
-    def grad(dy):
-        return dy
-    
-    return tf.round(x), grad
-    
-#############
-
-def quantize_and_dequantize(x, low, high):
-    scale = tf.reduce_max(tf.abs(x)) / high
-    x = x / scale
-    x = round_no_grad(x)
-    x = tf.clip_by_value(x, low, high)
-    x = x * scale
-    return x
-
-def quantize(x, low, high):
-    scale = tf.reduce_max(tf.abs(x)) / high
-    x = x / scale
-    x = round_no_grad(x)
-    x = tf.clip_by_value(x, low, high)
-    return x, scale
-    
-def quantize_predict(x, scale, low, high):
-    x = x / scale
-    x = tf.floor(x)
-    x = tf.clip_by_value(x, low, high)
-    return x
-
-#############
-
-def quantize_and_dequantize_np(x, low, high):
-    scale = np.max(np.absolute(x)) / high
-    x = x / scale
-    x = np.round(x)
-    x = np.clip(x, low, high)
-    x = x * scale
-    return x, scale
-
-def quantize_np(x, low, high):
-    scale = np.max(np.absolute(x)) / high
-    x = x / scale
-    x = np.round(x)
-    x = np.clip(x, low, high)
-    return x, scale
-    
-#############
-
 class model:
     def __init__(self, layers):
         self.layers = layers
@@ -83,14 +18,6 @@ class model:
         for layer in self.layers:
             y = layer.train(y, training)
         return y
-    
-    def collect(self, x):
-        y = x
-        stats = {}
-        for layer in self.layers:
-            y, stat = layer.collect(y)
-            stats.update(stat)
-        return y, stats
     
     def get_weights(self):
         weights_dict = {}
@@ -114,9 +41,6 @@ class layer:
         assert(False)
         
     def train(self, x):        
-        assert(False)
-    
-    def collect(self, qx, x):
         assert(False)
         
     def get_weights(self):
@@ -203,30 +127,7 @@ class conv_block(layer):
         else:         out = conv
 
         out = quantize_and_dequantize(out, -128, 127)
-        return out
-        
-    def collect(self, x):
-        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
-        
-        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
-        mean, var = tf.nn.moments(conv, axes=[0,1,2])
-        std = tf.sqrt(var + 1e-5)
-        
-        fold_f = (self.g * self.f) / std
-        fold_b = self.b - ((self.g * mean) / std)
-        # qf = quantize_and_dequantize(fold_f, -128, 127)
-        # qb = fold_b
-        qf, sf = quantize(fold_f, -128, 127)
-        qb = quantize_predict(fold_b, sf, -2**24, 2**24-1)
-
-        conv = tf.nn.conv2d(x_pad, qf, [1,self.p,self.p,1], 'VALID') + qb
-        
-        if self.relu: out = tf.nn.relu(conv)
-        else:         out = conv
-
-        # out = quantize_and_dequantize(out, -128, 127)
-        qout, sout = quantize(out, -128, 127)
-        return qout, {self.layer_id: {'std': std, 'mean': mean, 'scale': sf}}
+        return out 
     
     def get_weights(self):
         weights_dict = {}
@@ -256,18 +157,6 @@ class res_block1(layer):
         y2 = self.conv2.train(y1, training)
         y3 = tf.nn.relu(x + y2)
         return y3
-
-    def collect(self, x):
-        stats = {}
-        y1, stat1 = self.conv1.collect(x)
-        y2, stat2 = self.conv2.collect(y1)
-        y3 = tf.nn.relu(x + y2)
-        out, scale = quantize(y3, -128, 127)
-
-        stats.update(stat1)
-        stats.update(stat2)
-        stats[self.layer_id] = {'scale': scale}
-        return out, stats
 
     def get_weights(self):
         weights_dict = {}
@@ -306,21 +195,6 @@ class res_block2(layer):
         y3 = self.conv3.train(x, training)
         y4 = tf.nn.relu(y2 + y3)
         return y4
-
-    def collect(self, x):
-        stats = {}
-        y1, stat1 = self.conv1.collect(x)
-        y2, stat2 = self.conv2.collect(y1)
-        y3, stat3 = self.conv3.collect(x)
-
-        y4 = tf.nn.relu(y2 + y3)
-        out, scale = quantize(y4, -128, 127)
-
-        stats.update(stat1)
-        stats.update(stat2)
-        stats.update(stat3)
-        stats[self.layer_id] = {'scale': scale}
-        return out, stats
 
     def get_weights(self):
         weights_dict = {}
@@ -361,11 +235,6 @@ class dense_block(layer):
         fc = tf.matmul(x, self.w) + self.b
         return fc
 
-    def collect(self, x):
-        x = tf.reshape(x, (-1, self.isize))
-        fc = tf.matmul(x, self.w) + self.b
-        return fc, {}
-
     def get_weights(self):
         weights_dict = {}
         weights_dict[self.layer_id] = {'w': self.w, 'b': self.b}
@@ -388,10 +257,6 @@ class avg_pool(layer):
         pool = tf.nn.avg_pool(x, ksize=self.p, strides=self.s, padding="SAME")
         return pool
     
-    def collect(self, x):
-        pool = tf.nn.avg_pool(x, ksize=self.p, strides=self.s, padding="SAME")
-        return pool, {}
-    
     def get_weights(self):    
         weights_dict = {}
         return weights_dict
@@ -412,10 +277,6 @@ class max_pool(layer):
     def train(self, x, training=False):        
         pool = tf.nn.max_pool(x, ksize=self.p, strides=self.s, padding="SAME")
         return pool
-    
-    def collect(self, x):
-        pool = tf.nn.max_pool(x, ksize=self.p, strides=self.s, padding="SAME")
-        return pool, {}
     
     def get_weights(self):    
         weights_dict = {}
