@@ -7,16 +7,18 @@ import time
 
 ####################################
 
-'''
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 for device in gpu_devices:
     tf.config.experimental.set_memory_growth(device, True)
-'''
 
+from yolo_loss import yolo_loss
+
+'''
 gpus = tf.config.experimental.list_physical_devices('GPU')
 gpu = gpus[0]
 tf.config.experimental.set_visible_devices(gpu, 'GPU')
 tf.config.experimental.set_memory_growth(gpu, True)
+'''
 
 ####################################
 
@@ -44,15 +46,34 @@ obj (0,1)
 '''
 
 def create_labels(dets):
+    max_nd = 0
+    for b in range(len(dets)):
+        nd = len(dets[b])
+        max_nd = max(max_nd, nd)
 
-    ndets = len(dets)
-    coords  = np.zeros(shape=[ndets, 7, 7, 5])
+    coords = []; objs = []; no_objs = []; cats = []; vlds = []
+    for b in range(len(dets)):
+        coord, obj, no_obj, cat, vld = det_tensor(dets[b], max_nd)
+        coords.append(coord); objs.append(obj); no_objs.append(no_obj); cats.append(cat); vlds.append(vld)
+    
+    coords  = np.stack(coords, axis=0)
+    objs    = np.stack(objs, axis=0)
+    no_objs = np.stack(no_objs, axis=0)
+    cats    = np.stack(cats, axis=0)
+    vlds    = np.stack(vlds, axis=0)
+
+    return coords, objs, no_objs, cats, vlds
+
+def det_tensor(dets, ndets):
+
+    coord   = np.zeros(shape=[ndets, 7, 7, 5])
     obj     = np.zeros(shape=[ndets, 7, 7])
     no_obj  = np.ones(shape=[ndets, 7, 7])
-    cats    = np.zeros(shape=[ndets, 7, 7])
+    cat     = np.zeros(shape=[ndets, 7, 7])
+    vld     = np.zeros(shape=[ndets, 7, 7])
     
     for idx in range(ndets):
-        _, x, y, w, h, cat, _, _ = dets[idx]
+        _, x, y, w, h, c, _, _ = dets[idx]
         x = x + 0.5 * w
         y = y + 0.5 * h
 
@@ -64,12 +85,13 @@ def create_labels(dets):
         w = w / 288.
         h = h / 240.
         
-        coords[idx, xc, yc, :] = np.array([x, y, w, h, 1.])
+        coord[idx, xc, yc, :] = np.array([x, y, w, h, 1.])
         obj[idx, xc, yc] = 1.
         no_obj[idx, xc, yc] = 0.
-        cats[idx, xc, yc] = cat
+        cat[idx, xc, yc] = c
+        vld[idx, :, :] = 1.
         
-    return coords, obj, no_obj, cats
+    return coord, obj, no_obj, cat, vld
 
 ####################################
 
@@ -105,29 +127,13 @@ params = model.get_params()
 
 optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
-def gradients(model, x, y):
+def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
         out = model.train(x)
-        loss = yolo_loss(out, )
+        loss = yolo_loss(out, coord, obj, no_obj, cat, vld)
     
     grad = tape.gradient(loss, params)
     return loss, grad
-
-####################################
-
-def predict(model, x, y):
-    pred_logits = model.train(x)
-    # pred_label = tf.argmax(pred_logits, axis=1)
-    # correct = tf.reduce_sum(tf.cast(tf.equal(pred_label, y), tf.float32))
-    return pred_logits
-
-####################################
-
-def collect(model, x, y):
-    pred_logits, stats = model.collect(x)
-    pred_label = tf.argmax(pred_logits, axis=1)
-    correct = tf.reduce_sum(tf.cast(tf.equal(pred_label, y), tf.float32))
-    return correct, stats
 
 ####################################
 
@@ -136,8 +142,8 @@ def run_train():
     total = 100
     total_correct = 0
     total_loss = 0
-    batch_size = 1
     '''
+    batch_size = 8
     
     # load = Loader('', total // batch_size, batch_size, 8)
     load = np.load('dataset.npy', allow_pickle=True).item()
@@ -145,14 +151,20 @@ def run_train():
     
     start = time.time()
 
-    for ex in range(len(xs)):
+    for ex in range(0, len(xs), batch_size):
         # while load.empty(): pass # print ('empty')
         
         # x, y = load.pop()
-        x = np.expand_dims(xs[ex].astype(np.float32), axis=0)
-        y = create_labels(ys[ex])
         
-        pred = predict(model, x, y)
+        s = ex
+        e = ex + batch_size
+        if e > len(xs): continue
+        
+        x = xs[s:e].astype(np.float32)
+        coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
+        
+        loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
+        optimizer.apply_gradients(zip(grad, params))
         
         '''
         loss, correct, grad = gradients(model, x, y)

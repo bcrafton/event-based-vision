@@ -2,7 +2,6 @@
 import numpy as np
 import tensorflow as tf
 
-'''
 offset_np = [
 [[0, 0],   [0, 64],   [0, 128],   [0, 192],   [0, 256],   [0, 320],   [0, 384]], 
 [[64, 0],  [64, 64],  [64, 128],  [64, 192],  [64, 256],  [64, 320],  [64, 384]], 
@@ -12,21 +11,11 @@ offset_np = [
 [[320, 0], [320, 64], [320, 128], [320, 192], [320, 256], [320, 320], [320, 384]],  
 [[384, 0], [384, 64], [384, 128], [384, 192], [384, 256], [384, 320], [384, 384]]
 ]
-'''
-
-offset_np = [
-[  [0, 0],   [0, 48],   [0, 96],   [0, 144],   [0, 192],   [0, 240]], 
-[ [48, 0],  [48, 48],  [48, 96],  [48, 144],  [48, 192],  [48, 240]], 
- [[96, 0],  [96, 48],  [96, 96],  [96, 144], [128, 192], [128, 240]], 
-[[144, 0], [144, 48], [144, 96], [144, 144], [144, 192], [144, 240]], 
-[[192, 0], [192, 48], [192, 96], [192, 144], [192, 192], [192, 240]]
-]
 
 offset = tf.constant(offset_np, dtype=tf.float32)
 
 def grid_to_pix(box):
-    pix_box_xy = 48. * box[:, :, :, :, 0:2] + offset
-    # TODO: 448
+    pix_box_xy = 64. * box[:, :, :, :, 0:2] + offset
     pix_box_wh = 448. * box[:, :, :, :, 2:4]
     pix_box = tf.concat((pix_box_xy, pix_box_wh), axis=4)
     return pix_box
@@ -69,7 +58,7 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     # no_obj = [4, -1, 7, 7]
     # cat    = [4, -1, 7, 7]
 
-    pred = tf.reshape(pred, [8, 1, 6, 5, 12])
+    pred = tf.reshape(pred, [8, 1, 7, 7, 90])
 
     ######################################
 
@@ -98,7 +87,7 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     ############################
 
     label_cat = tf.one_hot(cat, depth=80)
-    pred_cat = pred[:, :, :, :, 10:12]
+    pred_cat = pred[:, :, :, :, 10:90]
 
     ############################
 
@@ -153,9 +142,9 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
     ######################################
 
-    # return xy_loss, wh_loss, obj_loss, no_obj_loss, cat_loss
-    loss = xy_loss + wh_loss + obj_loss + no_obj_loss + cat_loss
-    return loss
+    return xy_loss, wh_loss, obj_loss, no_obj_loss, cat_loss
+
+
 
 
 
