@@ -49,6 +49,18 @@ def calc_iou_help(boxA, boxB):
     # return the intersection over union value
     return iou
 
+@tf.custom_gradient
+def abs_no_grad(x):
+    def grad(dy):
+        return dy
+    return tf.abs(x), grad
+
+@tf.custom_gradient
+def sign_no_grad(x):
+    def grad(dy):
+        return dy
+    return tf.sign(x), grad
+
 def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
     # pred   = [4,     7, 7, 90]
@@ -73,9 +85,13 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
     ############################
 
-    label_hw = tf.sqrt(label[:, :, :, :, 2:4])
-    pred_hw1 = tf.sqrt(tf.abs(pred[:, :, :, :, 2:4])) * tf.sign(pred[:, :, :, :, 2:4])
-    pred_hw2 = tf.sqrt(tf.abs(pred[:, :, :, :, 7:9])) * tf.sign(pred[:, :, :, :, 7:9])
+    # label_hw = tf.sqrt(label[:, :, :, :, 2:4])
+    # pred_hw1 = tf.sqrt(abs_no_grad(pred[:, :, :, :, 2:4])) * sign_no_grad(pred[:, :, :, :, 2:4])
+    # pred_hw2 = tf.sqrt(abs_no_grad(pred[:, :, :, :, 7:9])) * sign_no_grad(pred[:, :, :, :, 7:9])
+
+    label_hw = label[:, :, :, :, 2:4]
+    pred_hw1 = pred[:, :, :, :, 2:4]
+    pred_hw2 = pred[:, :, :, :, 7:9]
 
     ############################
 
