@@ -60,47 +60,16 @@ class conv_block(layer):
         self.pad = self.k // 2
         self.relu = relu
 
-        if 'g' in weights[self.weight_id].keys():
-            f, b, g, mean, var = weights[self.weight_id]['f'], weights[self.weight_id]['b'], weights[self.weight_id]['g'], weights[self.weight_id]['mean'], weights[self.weight_id]['var']
-
-            # need to actually do mean/var in forward if using new weights.
-            # f = np.random.normal(loc=0., scale=np.std(f), size=np.shape(f))
-            # b = np.zeros_like(b)
-            # g = np.ones_like(g)
-
-            #############################
-
-            '''
-            var = np.sqrt(var + 1e-5)
-            f = f * (g / var)
-            b = b - (g / var) * mean
-            '''
-            
-            #############################
-            
-            '''
-            if self.weight_id == 0:
-                std = np.array([0.229, 0.224, 0.225]) * 255. / 2.
-                f = f / np.reshape(std, (3,1))
-
-                mean = np.array([0.485, 0.456, 0.406]) * 255. / 2.
-                expand_mean = np.ones(shape=(7,7,3)) * mean
-                expand_mean = expand_mean.flatten()
-
-                b = b - (expand_mean @ np.reshape(f, (7*7*3, 64)))
-            '''
-            
-            #############################
-
+        if weights:
+            f, b, g = weights[self.weight_id]['f'], weights[self.weight_id]['b'], weights[self.weight_id]['g']
             self.f = tf.Variable(f, dtype=tf.float32)
             self.g = tf.Variable(g, dtype=tf.float32)
             self.b = tf.Variable(b, dtype=tf.float32)
-            
-            self.mean = tf.constant(mean, dtype=tf.float32)
-            self.std = tf.constant(np.sqrt(var + 1e-5), dtype=tf.float32)
-            
         else:
-            assert (False)
+            f_np = init_filters(size=[self.k, self.k, self.f1, self.f2], init='glorot_uniform')
+            self.f = tf.Variable(f_np, dtype=tf.float32)
+            self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
+            self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
 
     def train(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
@@ -207,9 +176,14 @@ class dense_block(layer):
         self.isize = isize
         self.osize = osize
         
-        w, b = weights[self.weight_id]['w'], weights[self.weight_id]['b']
-        self.w = tf.Variable(w, dtype=tf.float32)
-        self.b = tf.Variable(b, dtype=tf.float32)
+        if weights:
+            w, b = weights[self.weight_id]['w'], weights[self.weight_id]['b']
+            self.w = tf.Variable(w, dtype=tf.float32)
+            self.b = tf.Variable(b, dtype=tf.float32)
+        else:
+            w_np = init_matrix(size=[isize, osize], init='glorot_uniform')
+            self.w = tf.Variable(w_np, dtype=tf.float32)
+            self.b = tf.Variable(np.zeros(shape=self.osize), dtype=tf.float32)
 
     def train(self, x):
         x = tf.reshape(x, (-1, self.isize))
