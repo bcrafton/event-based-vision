@@ -131,7 +131,7 @@ params = model.get_params()
 
 ####################################
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1.)
+optimizer = tf.keras.optimizers.Adam(learning_rate=1e-2, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
 def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
@@ -144,9 +144,6 @@ def gradients(model, x, coord, obj, no_obj, cat, vld):
 ####################################
 
 def run_train():
-    # total = 100
-    # total_correct = 0
-    total_loss = 0
     batch_size = 8
     
     # load = Loader('', total // batch_size, batch_size, 8)
@@ -155,14 +152,15 @@ def run_train():
     
     start = time.time()
 
-    for epoch in range(10):
-        for ex in range(0, len(xs), batch_size):
+    for epoch in range(100):
+        total_loss = 0
+        for batch in range(0, len(xs), batch_size):
             # while load.empty(): pass # print ('empty')
             
             # x, y = load.pop()
             
-            s = ex
-            e = ex + batch_size
+            s = batch
+            e = batch + batch_size
             if e > len(xs): continue
             
             x = xs[s:e].astype(np.float32)
@@ -172,7 +170,6 @@ def run_train():
             optimizer.apply_gradients(zip(grad, params))
             
             total_loss += loss.numpy()
-            print (loss.numpy())
             
             '''
             loss, correct, grad = gradients(model, x, y)
@@ -188,6 +185,9 @@ def run_train():
                 img_per_sec = (batch + batch_size) / (time.time() - start)
                 print (batch + batch_size, img_per_sec, acc, avg_loss)
             '''
+
+        avg_loss = total_loss / (batch + batch_size)
+        print (avg_loss)
 
         # trained_weights = model.get_weights()
         # np.save('trained_weights', trained_weights)
