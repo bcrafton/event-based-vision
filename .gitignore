@@ -1,0 +1,6 @@
+
+*__pycache__
+*.results
+*.npy
+nohup.out
+*.pyc

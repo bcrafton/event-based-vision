@@ -74,6 +74,7 @@ class conv_block(layer):
     def train(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
         conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
+        mean, var = tf.nn.moments(conv, axes=[0,1,2])
         bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)        
         if self.relu: out = tf.nn.relu(conv)
         else:         out = conv
