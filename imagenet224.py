@@ -2,7 +2,6 @@
 import numpy as np
 import tensorflow as tf
 from layers import *
-from load import Loader
 import time
 import matplotlib.pyplot as plt
 
@@ -155,7 +154,7 @@ def run_train():
     for epoch in range(100):
         total_loss = 0
         for n in range(N):
-            filename = '%d.npy' % (n)
+            filename = './dataset/%d.npy' % (n)
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
             for batch in range(0, len(xs), batch_size):
@@ -172,13 +171,13 @@ def run_train():
                 total_loss += loss.numpy()
                 
                 nd = np.count_nonzero(obj[0])
-                draw_box('%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
+                draw_box('./results/%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
             
         avg_loss = total_loss / (batch + batch_size)
         print (avg_loss)
 
-        # trained_weights = model.get_weights()
-        # np.save('trained_weights', trained_weights)
+        trained_weights = model.get_weights()
+        np.save('trained_weights', trained_weights)
 
 ####################################
 
