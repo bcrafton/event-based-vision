@@ -133,7 +133,7 @@ params = model.get_params()
 
 ####################################
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1.)
+optimizer = tf.keras.optimizers.Adam(learning_rate=4e-3, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
 def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
@@ -146,7 +146,7 @@ def gradients(model, x, coord, obj, no_obj, cat, vld):
 
 ####################################
 
-datasets = ['0.npy', '1.npy', '2.npy', '3.npy']
+N = 18
 
 def run_train():
     batch_size = 8    
@@ -154,7 +154,8 @@ def run_train():
 
     for epoch in range(100):
         total_loss = 0
-        for filename in datasets:
+        for n in range(N):
+            filename = '%d.npy' % (n)
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
             for batch in range(0, len(xs), batch_size):
@@ -171,7 +172,7 @@ def run_train():
                 total_loss += loss.numpy()
                 
                 nd = np.count_nonzero(obj[0])
-                draw_box('image.jpg', x[0, :, :, -1], coord[0], out.numpy()[0], nd)
+                draw_box('%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
             
         avg_loss = total_loss / (batch + batch_size)
         print (avg_loss)
