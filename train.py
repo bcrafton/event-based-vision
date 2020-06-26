@@ -7,19 +7,21 @@ import matplotlib.pyplot as plt
 
 ####################################
 
+'''
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 for device in gpu_devices:
     tf.config.experimental.set_memory_growth(device, True)
+'''
+
+# '''
+gpus = tf.config.experimental.list_physical_devices('GPU')
+gpu = gpus[2]
+tf.config.experimental.set_visible_devices(gpu, 'GPU')
+tf.config.experimental.set_memory_growth(gpu, True)
+# '''
 
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
-
-'''
-gpus = tf.config.experimental.list_physical_devices('GPU')
-gpu = gpus[0]
-tf.config.experimental.set_visible_devices(gpu, 'GPU')
-tf.config.experimental.set_memory_growth(gpu, True)
-'''
 
 ####################################
 
@@ -145,18 +147,28 @@ def gradients(model, x, coord, obj, no_obj, cat, vld):
 
 ####################################
 
-N = 18
+def write(filename, text):
+    print (text)
+    f = open(filename, "a")
+    f.write(text + "\n")
+    f.close()
 
+####################################
+
+N = 18
 def run_train():
     batch_size = 8    
-    start = time.time()
 
-    for epoch in range(100):
+    for epoch in range(1000):
         total_loss = 0
+        total = 0
+        start = time.time()
+
         for n in range(N):
             filename = './dataset/%d.npy' % (n)
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
+
             for batch in range(0, len(xs), batch_size):
                 s = batch
                 e = batch + batch_size
@@ -169,12 +181,15 @@ def run_train():
                 optimizer.apply_gradients(zip(grad, params))
                 
                 total_loss += loss.numpy()
-                
+                total += batch_size
+
                 nd = np.count_nonzero(obj[0])
                 draw_box('./results/%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
-            
+
         avg_loss = total_loss / (batch + batch_size)
-        print (avg_loss)
+        avg_rate = total / (time.time() - start)
+        # print (avg_rate, avg_loss)
+        write('train.results', 'rate: %f, loss %f' % (avg_rate, avg_loss))
 
         trained_weights = model.get_weights()
         np.save('trained_weights', trained_weights)
