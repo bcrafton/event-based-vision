@@ -146,61 +146,33 @@ def gradients(model, x, coord, obj, no_obj, cat, vld):
 
 ####################################
 
+datasets = ['0.npy', '1.npy', '2.npy', '3.npy']
+
 def run_train():
-    batch_size = 8
-    
-    # load = Loader('', total // batch_size, batch_size, 8)
-    load = np.load('dataset.npy', allow_pickle=True).item()
-    xs, ys = load['x'], load['y']
-    
+    batch_size = 8    
     start = time.time()
 
     for epoch in range(100):
         total_loss = 0
-        for batch in range(0, len(xs), batch_size):
-            # while load.empty(): pass # print ('empty')
+        for filename in datasets:
+            load = np.load(filename, allow_pickle=True).item()
+            xs, ys = load['x'], load['y']
+            for batch in range(0, len(xs), batch_size):
+                s = batch
+                e = batch + batch_size
+                if e > len(xs): continue
+                
+                x = xs[s:e].astype(np.float32)
+                coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
+                
+                out, loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
+                optimizer.apply_gradients(zip(grad, params))
+                
+                total_loss += loss.numpy()
+                
+                nd = np.count_nonzero(obj[0])
+                draw_box('image.jpg', x[0, :, :, -1], coord[0], out.numpy()[0], nd)
             
-            # x, y = load.pop()
-            
-            s = batch
-            e = batch + batch_size
-            if e > len(xs): continue
-            
-            x = xs[s:e].astype(np.float32)
-            coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
-            
-            out, loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
-            optimizer.apply_gradients(zip(grad, params))
-            
-            total_loss += loss.numpy()
-            
-            # plt.imshow(np.mean(x, axis=(0, 3)))
-            # plt.imshow(x[0, :, :, 0])
-            # plt.show()
-            
-            # print (np.shape(out.numpy()))
-            
-            # print (np.shape(coord))
-            
-            # nb, nd, _, _, _ = np.shape(coord)
-            nd = np.count_nonzero(obj[0])
-            draw_box('image.jpg', x[0, :, :, -1], coord[0], out.numpy()[0], nd)
-            
-            '''
-            loss, correct, grad = gradients(model, x, y)
-            optimizer.apply_gradients(zip(grad, params))
-            total_loss += loss.numpy()
-            
-            total_correct += correct.numpy()
-            
-            acc = round(total_correct / (batch + batch_size), 3)
-            avg_loss = total_loss / (batch + batch_size)
-            
-            if (batch + batch_size) % (batch_size * 100) == 0:
-                img_per_sec = (batch + batch_size) / (time.time() - start)
-                print (batch + batch_size, img_per_sec, acc, avg_loss)
-            '''
-
         avg_loss = total_loss / (batch + batch_size)
         print (avg_loss)
 
