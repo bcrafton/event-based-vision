@@ -29,7 +29,7 @@ def play_files_parallel(td_files, labels=None, delta_t=50000, skip=0):
     height, width = videos[0].get_size()
 
     frame = np.zeros((height, width, 3), dtype=np.uint8)
-    cv2.namedWindow('out', cv2.WINDOW_NORMAL)
+    # cv2.namedWindow('out', cv2.WINDOW_NORMAL)
     
     # while all videos have something to read
     # while not sum([video.done for video in videos]):
@@ -62,20 +62,24 @@ def play_files_parallel(td_files, labels=None, delta_t=50000, skip=0):
                 # assert (np.all(frame[:, :, 0] == frame[:, :, 1]))
                 frames = frames[-12:]
                 frames = np.stack(frames, axis=-1)
-                xs.append(frames)
-                frames = []
                 for box in boxes:
                     box[1] = round(box[1] * (288 / 304))
                     box[3] = round(box[3] * (288 / 304))
-                dets.append(np.copy(boxes))
-              
+                if np.shape(frames) == (240, 288, 12):
+                    xs.append(frames)
+                    dets.append(np.copy(boxes))
+                frames = []
+
             vis.draw_bboxes(frame_preprocess, boxes)
 
             # display the result
+            '''
             if len(boxes):
                 cv2.imshow('out', frame_preprocess)
                 cv2.waitKey(1)
+            '''
 
+        print (np.shape(np.array(xs)))
         dataset = {'x': np.array(xs), 'y': dets}
         np.save('./data/%d' % (idx), dataset)
 
