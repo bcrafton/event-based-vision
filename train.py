@@ -7,18 +7,18 @@ import matplotlib.pyplot as plt
 
 ####################################
 
-'''
+# '''
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 for device in gpu_devices:
     tf.config.experimental.set_memory_growth(device, True)
-'''
-
 # '''
+
+'''
 gpus = tf.config.experimental.list_physical_devices('GPU')
 gpu = gpus[2]
 tf.config.experimental.set_visible_devices(gpu, 'GPU')
 tf.config.experimental.set_memory_growth(gpu, True)
-# '''
+'''
 
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
@@ -165,7 +165,7 @@ def run_train():
         start = time.time()
 
         for n in range(N):
-            filename = './dataset/%d.npy' % (n)
+            filename = './dataset/data/%d.npy' % (n)
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
 
