@@ -1,3 +1,9 @@
 
-> yeah its absolutely the xy flip
-> so we will need to fix this.
+> XY WH confusion
+
+> Hyperparameter search = {results, run_results, get_results}
+  > Learning rate schedule
+
+> Better bounding box drawings.
+
+> Loader which preloads the numpy files.
