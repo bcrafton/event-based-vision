@@ -1,19 +1,4 @@
 
-import argparse
-import os
-import sys
-
-parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', type=int, default=25)
-# parser.add_argument('--batch_size', type=int, default=50)
-parser.add_argument('--lr', type=float, default=1e-3)
-parser.add_argument('--gpu', type=int, default=0)
-# parser.add_argument('--name', type=str, default="imagenet_weights")
-name = '%d_%f.results' % (args.gpu, args.lr)
-args = parser.parse_args()
-
-####################################
-
 import numpy as np
 import tensorflow as tf
 from layers import *
@@ -22,18 +7,18 @@ import matplotlib.pyplot as plt
 
 ####################################
 
-'''
+# '''
 gpu_devices = tf.config.experimental.list_physical_devices('GPU')
 for device in gpu_devices:
     tf.config.experimental.set_memory_growth(device, True)
-'''
-
 # '''
+
+'''
 gpus = tf.config.experimental.list_physical_devices('GPU')
-gpu = gpus[args.gpu]
+gpu = gpus[2]
 tf.config.experimental.set_visible_devices(gpu, 'GPU')
 tf.config.experimental.set_memory_growth(gpu, True)
-# '''
+'''
 
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
@@ -149,7 +134,26 @@ params = model.get_params()
 
 ####################################
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1.)
+'''
+step = tf.Variable(0, trainable=False)
+boundaries = [10, 20]
+values = [1e-3, 1e-2, 1e-3]
+learning_rate = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries, values)
+# step = optimizer.iterations
+# optimizer = tf.keras.optimizers.Adam() ... 
+'''
+
+# boundry = (12504 / 8) * 10
+boundry = 15630
+
+step = tf.Variable(0, trainable=False)
+boundaries = [boundry]
+values = [1e-3, 1e-2]
+learning_rate = tf.keras.optimizers.schedules.PiecewiseConstantDecay(boundaries, values)
+
+####################################
+
+optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
 def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
@@ -170,11 +174,11 @@ def write(filename, text):
 
 ####################################
 
-N = 250
+N = 18
 def run_train():
     batch_size = 8    
 
-    for epoch in range(args.epochs):
+    for epoch in range(1000):
         total_loss = 0
         total = 0
         start = time.time()
@@ -194,18 +198,18 @@ def run_train():
                 
                 out, loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
                 optimizer.apply_gradients(zip(grad, params))
+                # print (optimizer.iterations)
                 
                 total_loss += loss.numpy()
                 total += batch_size
-                
-                if (epoch % 5) == 0:
-                    nd = np.count_nonzero(obj[0])
-                    draw_box('./results/%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
+
+                nd = np.count_nonzero(obj[0])
+                draw_box('./results/%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
 
         avg_loss = total_loss / (batch + batch_size)
         avg_rate = total / (time.time() - start)
         # print (avg_rate, avg_loss)
-        write(name, 'total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
+        write('train.results', 'rate: %f, loss %f' % (avg_rate, avg_loss))
 
         trained_weights = model.get_weights()
         np.save('trained_weights', trained_weights)
