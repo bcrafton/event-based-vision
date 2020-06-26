@@ -9,8 +9,9 @@ parser.add_argument('--epochs', type=int, default=25)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--gpu', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
-name = '%d_%f.results' % (args.gpu, args.lr)
 args = parser.parse_args()
+
+name = '%d_%f.results' % (args.gpu, args.lr)
 
 ####################################
 
@@ -149,7 +150,7 @@ params = model.get_params()
 
 ####################################
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=1e-3, beta_1=0.9, beta_2=0.999, epsilon=1.)
+optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
 def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
@@ -207,8 +208,8 @@ def run_train():
         # print (avg_rate, avg_loss)
         write(name, 'total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
 
-        trained_weights = model.get_weights()
-        np.save('trained_weights', trained_weights)
+        # trained_weights = model.get_weights()
+        # np.save('trained_weights', trained_weights)
 
 ####################################
 
