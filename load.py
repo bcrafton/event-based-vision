@@ -6,78 +6,105 @@ from PIL import Image
 import random
 from multiprocessing import Process, Queue
 
-#########################################
+####################################
+
 '''
-import torch
-import torchvision
-from torchvision import transforms
-
-preprocess_transform = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
-])
-
-def preprocess(filename):
-    image = Image.open(filename).convert('RGB')
-    image = preprocess_transform(image)
-    print (filename)
-    return image.numpy()
+x abscissa of the top left corner in pixels
+y ordinate of the top left corner in pixels
+w width of the boxes in pixel
+h height of the boxes in pixel
+ts timestamp of the box in the sequence in microseconds
+class_id 0 for cars and 1 for pedestrians
 '''
-#########################################
 
-# if there is a mismatch between this and pytorch
-# would first guess the np.floor we are using here.
-# but the best thing we found to do
-# was diff this and 'pytorch_resnet.py' for np.std(image) at various places.
+# (49499999, 218., 84., 96., 91., 0, 1., 3758)
+# (49499999, 93., 84., 12., 43., 1, 1., 3759)
 
-def preprocess(filename):
-    image = Image.open(filename).convert('RGB')
-    
-    H, W = image.height, image.width
-    new_H = max(int(np.floor(H / W * 256)), 256)
-    new_W = max(int(np.floor(W / H * 256)), 256)
-    image = image.resize((new_W, new_H), Image.BILINEAR)
-    image = np.array(image)
-    assert (np.shape(image) == (new_H, new_W, 3))
-    
-    h1 = (new_H - 224) // 2
-    h2 = h1 + 224
-    w1 = (new_W - 224) // 2
-    w2 = w1 + 224
-    
-    assert(h2 <= new_H)
-    assert(w2 <= new_W)
-    image = image[h1:h2, w1:w2, :]
-    
-    # mean = np.array([0.485, 0.456, 0.406])
-    # std = np.array([0.229, 0.224, 0.225])
-    # image = image / 255
-    # image = (image - mean) / std
-    
-    image = image // 2
-    
-    return image
+'''
+ts timestamp of the box in the sequence in microseconds
+x abscissa of the top left corner in pixels
+y ordinate of the top left corner in pixels
+w width of the boxes in pixel
+h height of the boxes in pixel
+class_id 0 for cars and 1 for pedestrians
+obj (0,1)
+[3758, 3759] ???
+'''
 
-#########################################
+def create_labels(dets):
+    max_nd = 0
+    for b in range(len(dets)):
+        nd = len(dets[b])
+        max_nd = max(max_nd, nd)
 
-def fill_queue(tid, nbatch, batch_size, nthread, images, labels, q):
+    coords = []; objs = []; no_objs = []; cats = []; vlds = []
+    for b in range(len(dets)):
+        coord, obj, no_obj, cat, vld = det_tensor(dets[b], max_nd)
+        coords.append(coord); objs.append(obj); no_objs.append(no_obj); cats.append(cat); vlds.append(vld)
+    
+    coords  = np.stack(coords, axis=0).astype(np.float32)
+    objs    = np.stack(objs, axis=0).astype(np.float32)
+    no_objs = np.stack(no_objs, axis=0).astype(np.float32)
+    cats    = np.stack(cats, axis=0).astype(np.float32)
+    vlds    = np.stack(vlds, axis=0).astype(np.float32)
+
+    return coords, objs, no_objs, cats, vlds
+
+def det_tensor(dets, max_nd):
+
+    coord   = np.zeros(shape=[max_nd, 5, 6, 5])
+    obj     = np.zeros(shape=[max_nd, 5, 6])
+    no_obj  = np.ones(shape=[max_nd, 5, 6])
+    cat     = np.zeros(shape=[max_nd, 5, 6])
+    vld     = np.zeros(shape=[max_nd, 5, 6])
+    
+    for idx in range(len(dets)):
+
+        _, x, y, w, h, c, _, _ = dets[idx]
+        x = np.clip(x + 0.5 * w, 0, 288)
+        y = np.clip(y + 0.5 * h, 0, 240)
+
+        xc = int(np.clip(x // 48, 0, 5))
+        yc = int(np.clip(y // 48, 0, 4))
+        
+        x = (x - xc * 48.) / 48. # might want to clip this to zero
+        y = (y - yc * 48.) / 48. # might want to clip this to zero
+        w = w / 288.
+        h = h / 240.
+        
+        x = np.clip(x, 0, 1)
+        y = np.clip(y, 0, 1)
+        w = np.clip(w, 0, 1)
+        h = np.clip(h, 0, 1)
+        
+        coord [idx, yc, xc, :] = np.array([y, x, h, w, 1.])
+        obj   [idx, yc, xc] = 1.
+        no_obj[idx, yc, xc] = 0.
+        cat   [idx, yc, xc] = c
+        vld   [idx, :, :] = 1.
+        
+    return coord, obj, no_obj, cat, vld
+
+####################################
+
+def fill_queue(tid, nbatch, batch_size, nthread, samples, q):
+    # for batch in range(tid, len(samples), nthread):
     for batch in range(tid, nbatch, nthread):
         while q.full(): pass
         batch_x = []
         batch_y = []
         for i in range(batch_size):
-            example = batch*batch_size + i
-            assert (example < nbatch * batch_size)
+            example = batch * batch_size * i
+            print (example, len(samples))
+            assert (example < len(samples))
+            sample = np.load(samples[example], allow_pickle=True).item()
+            x, y = sample['x'], sample['y']
+            batch_x.append(x)
+            batch_y.append(y)
 
-            image = preprocess(images[example])
-            batch_x.append(image)
-            batch_y.append(labels[example])
-
-        batch_x = np.stack(batch_x, axis=0).astype(np.float32)
-        batch_y = np.array(batch_y)
-        q.put((batch_x, batch_y))
+        img = np.stack(batch_x, axis=0).astype(np.float32)
+        coord, obj, no_obj, cat, vld = create_labels(batch_y)
+        q.put((img, coord, obj, no_obj, cat, vld))
 
 #########################################
 
@@ -95,36 +122,25 @@ class Loader:
 
         ##############################
         
-        self.images = []
-        self.labels = []
+        self.samples = []
         for subdir, dirs, files in os.walk(path):
             for file in files:
-                if file in ['keras_imagenet_val.py', 'keras_imagenet_train.py']:
+                if file == 'placeholder':
                     continue
-                
-                self.images.append(os.path.join(subdir, file))
-                label = int(subdir.split('/')[-1])
-                self.labels.append(label)
+                self.samples.append(os.path.join(subdir, file))
         
         ##############################
 
-        merge = list(zip(self.images, self.labels))
-        random.shuffle(merge)
-        self.images, self.labels = zip(*merge)
-
-        remainder = len(self.images) % self.batch_size
+        random.shuffle(self.samples)
+        remainder = len(self.samples) % self.batch_size
         if remainder: 
-            self.images = self.images[:(-remainder)]
-            self.labels = self.labels[:(-remainder)]
-
-        # print (len(self.images))
-        # print (len(self.labels))
+            self.samples = self.samples[:(-remainder)]
 
         ##############################
         
         self.threads = []
         for tid in range(self.nthread):
-            thread = Process(target=fill_queue, args=(tid, self.nbatch, self.batch_size, self.nthread, self.images, self.labels, self.q))
+            thread = Process(target=fill_queue, args=(tid, self.nbatch, self.batch_size, self.nthread, self.samples, self.q))
             thread.start()
             self.threads.append(thread)
 
