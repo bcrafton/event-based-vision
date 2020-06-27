@@ -106,7 +106,7 @@ def det_tensor(dets, max_nd):
         h = h / 240.
         
         x = np.clip(x, 0, 1)
-        y = np.clip(x, 0, 1)
+        y = np.clip(y, 0, 1)
         w = np.clip(w, 0, 1)
         h = np.clip(h, 0, 1)
         

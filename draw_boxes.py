@@ -1,6 +1,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
+import cv2
 
 ##############################################################
 
@@ -97,12 +98,14 @@ def draw_box(name, image, label, pred, nbox):
             box = np.array(boxs1[yc][xc], dtype=int)
         else:
             box = np.array(boxs2[yc][xc], dtype=int)
+        
         draw_box_help(pred_image, box, colors[b])
         
     concat = np.concatenate((true_image, pred_image), axis=1)
     plt.imsave(name, concat)
 
 def draw_box_help(image, box, color):
+    '''
     [y, x, h, w] = box
     [x11, x12, x21, x22] = np.array([x-0.5*w, x-0.5*w+5, x+0.5*w-5, x+0.5*w], dtype=int)
     [y11, y12, y21, y22] = np.array([y-0.5*h, y-0.5*h+5, y+0.5*h-5, y+0.5*h], dtype=int)
@@ -110,9 +113,16 @@ def draw_box_help(image, box, color):
     image[y21:y22, x12:x21] = 1.
     image[y12:y21, x11:x12] = 1.
     image[y12:y21, x21:x22] = 1.
-
-
-
+    '''
+    '''
+    pt1 = (int(boxes['x'][i]), int(boxes['y'][i]))
+    pt2 = (pt1[0] + size[0], pt1[1] + size[1])
+    cv2.rectangle(img, pt1, pt2, color, 1)
+    '''
+    [y, x, h, w] = box
+    pt1 = (int(x-0.5*w), int(y-0.5*h))
+    pt2 = (int(x+0.5*w), int(y+0.5*h))
+    cv2.rectangle(image, pt1, pt2, 0, 1)
 
 
 
