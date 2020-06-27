@@ -203,7 +203,7 @@ def run_train():
                     nd = np.count_nonzero(obj[0])
                     draw_box('./results/%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
 
-        avg_loss = total_loss / (batch + batch_size)
+        avg_loss = total_loss / total
         avg_rate = total / (time.time() - start)
         # print (avg_rate, avg_loss)
         write(name, 'total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
