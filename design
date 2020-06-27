@@ -4,6 +4,9 @@
 > Hyperparameter search = {results, run_results, get_results}
   > Learning rate schedule
 
-> Better bounding box drawings.
-
 > Loader which preloads the numpy files.
+
+============
+DONE
+============
+> Better bounding box drawings.
