@@ -4,6 +4,14 @@
 > SQRT {H, W}
 > add train_b
 
+> is 'vld' redundant ?
+
+> 5x5, stride 3 is kinda sparse ... maybe go higher ? 
+> can we use pools instead of strides ? 
+> increase batch size for batch norm ?
+
+> run smaller training set ? 
+
 ============
 
 > Mean average precision.

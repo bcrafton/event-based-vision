@@ -34,14 +34,6 @@ offset_np = [
 [[192, 0], [192, 48], [192, 96], [192, 144], [192, 192], [192, 240]]
 ]
 
-'''
-def grid_to_pix(box):
-    box[..., 0:2] = 48.  * box[..., 0:2] + offset_np
-    box[..., 2]   = 240. * box[..., 2]
-    box[..., 3]   = 288. * box[..., 3]
-    return box
-'''
-
 def grid_to_pix(box):
     box[..., 0:2] = 48.  * box[..., 0:2] + offset_np
     box[..., 2]   = np.square(box[..., 2] * np.sqrt(240.))
@@ -81,13 +73,14 @@ def calc_iou_help(boxA, boxB):
     return iou
 
 def draw_box(name, image, label, pred, nbox):
-    # print (np.shape(label))
     objs      = label[..., 4]
-    # print (np.shape(objs))
     true_boxs = grid_to_pix(label[..., 0:4])
     boxs1     = grid_to_pix(pred[..., 0:4])
     boxs2     = grid_to_pix(pred[..., 5:9])
     iou = calc_iou(true_boxs, boxs1, boxs2)
+
+    conf1 = pred[..., 4]
+    conf2 = pred[..., 9]
 
     true_image = np.copy(image)
     pred_image = np.copy(image)
@@ -100,14 +93,28 @@ def draw_box(name, image, label, pred, nbox):
         box = np.array(true_boxs[b][yc][xc], dtype=int)
         draw_box_help(true_image, box, colors[b])
         
+        '''
         iou1 = iou[b][yc][xc][0]
         iou2 = iou[b][yc][xc][1]
+        
+        conf1 = pred[yc][xc][4]
+        conf2 = pred[yc][xc][9]
+        
+        # if conf1 > conf2:
         if iou1 > iou2:
             box = np.array(boxs1[yc][xc], dtype=int)
         else:
             box = np.array(boxs2[yc][xc], dtype=int)
         
         draw_box_help(pred_image, box, colors[b])
+        '''
+        
+    for yc in range (5):
+        for xc in range(6):
+            if conf1[yc][xc] > 1:
+                draw_box_help(pred_image, boxs1[yc][xc], None)
+            if conf2[yc][xc] > 1:
+                draw_box_help(pred_image, boxs2[yc][xc], None)
         
     concat = np.concatenate((true_image, pred_image), axis=1)
     plt.imsave(name, concat)

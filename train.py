@@ -121,29 +121,39 @@ def det_tensor(dets, max_nd):
 ####################################
 
 # load weights, hope the weight id matches up.
-weights = np.load('trained-1.npy', allow_pickle=True).item()
+weights = np.load('resnet18.npy', allow_pickle=True).item()
 
 # 240, 288
 model = model(layers=[
-conv_block((5,5,12,64), 3, weights=weights), # 80, 96
+conv_block((7,7,12,64), 1, weights=None), # 240, 288
+
+max_pool(s=3, p=3),
 
 res_block1(64,   64, 1, weights=weights), # 80, 96
 res_block1(64,   64, 1, weights=weights), # 80, 96
 
-res_block2(64,   128, 2, weights=weights), # 40, 48
+max_pool(s=2, p=2),
+
+res_block2(64,   128, 1, weights=weights), # 40, 48
 res_block1(128,  128, 1, weights=weights), # 40, 48
 
-res_block2(128,  256, 2, weights=weights), # 20, 24
+max_pool(s=2, p=2),
+
+res_block2(128,  256, 1, weights=weights), # 20, 24
 res_block1(256,  256, 1, weights=weights), # 20, 24
 
-res_block2(256,  512, 2, weights=weights), # 10, 12
+max_pool(s=2, p=2),
+
+res_block2(256,  512, 1, weights=weights), # 10, 12
 res_block1(512,  512, 1, weights=weights), # 10, 12
 
-res_block2(512,  512, 2, weights=weights), # 5, 6
-res_block1(512,  512, 1, weights=weights), # 5, 6
+max_pool(s=2, p=2),
 
-dense_block(5*6*512, 1024, weights=weights),
-dense_block(1024, 5*6*12, weights=weights, relu=False),
+res_block2(512,  512, 1, weights=None), # 5, 6
+res_block1(512,  512, 1, weights=None), # 5, 6
+
+dense_block(5*6*512, 1024, weights=None),
+dense_block(1024, 5*6*12, weights=None, relu=False),
 ])
 
 params = model.get_params()
