@@ -102,8 +102,8 @@ def det_tensor(dets, max_nd):
         
         x = (x - xc * 48.) / 48. # might want to clip this to zero
         y = (y - yc * 48.) / 48. # might want to clip this to zero
-        w = w / 288.
-        h = h / 240.
+        w = np.sqrt(w) / np.sqrt(288.)
+        h = np.sqrt(h) / np.sqrt(240.)
         
         x = np.clip(x, 0, 1)
         y = np.clip(y, 0, 1)
@@ -121,11 +121,11 @@ def det_tensor(dets, max_nd):
 ####################################
 
 # load weights, hope the weight id matches up.
-weights = np.load('resnet18.npy', allow_pickle=True).item()
+weights = np.load('trained-1.npy', allow_pickle=True).item()
 
 # 240, 288
 model = model(layers=[
-conv_block((5,5,12,64), 3), # 80, 96
+conv_block((5,5,12,64), 3, weights=weights), # 80, 96
 
 res_block1(64,   64, 1, weights=weights), # 80, 96
 res_block1(64,   64, 1, weights=weights), # 80, 96
@@ -139,11 +139,11 @@ res_block1(256,  256, 1, weights=weights), # 20, 24
 res_block2(256,  512, 2, weights=weights), # 10, 12
 res_block1(512,  512, 1, weights=weights), # 10, 12
 
-res_block2(512,  512, 2, weights=None), # 5, 6
-res_block1(512,  512, 1, weights=None), # 5, 6
+res_block2(512,  512, 2, weights=weights), # 5, 6
+res_block1(512,  512, 1, weights=weights), # 5, 6
 
-dense_block(5*6*512, 1024, weights=None),
-dense_block(1024, 5*6*12, weights=None, relu=False),
+dense_block(5*6*512, 1024, weights=weights),
+dense_block(1024, 5*6*12, weights=weights, relu=False),
 ])
 
 params = model.get_params()
@@ -203,7 +203,8 @@ def run_train():
                     nd = np.count_nonzero(obj[0])
                     draw_box('./results/%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
 
-        avg_loss = total_loss / total
+        # avg_loss = total_loss / total
+        avg_loss = total_loss / (total / batch_size) # we reduce_mean over (batch,detection) (0,1)
         avg_rate = total / (time.time() - start)
         # print (avg_rate, avg_loss)
         write(name, 'total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
