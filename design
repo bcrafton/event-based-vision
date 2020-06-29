@@ -1,5 +1,9 @@
+============
 
 > Loader which preloads the numpy files.
+> SQRT {H, W}
+
+============
 
 > Mean average precision.
   > https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox
@@ -21,6 +25,16 @@
   > cocoapi thing being a pain in the ass:
     > https://github.com/cocodataset/cocoapi/issues/180
 
+  Precision = TP / (TP + FP)
+  Recall = TP / (TP + FN)
+
+
+will we have to dig into the scripts ? 
+> maxDets
+> small, medium, large
+> ID, time stamp
+> not actually getting: mAP
+
 ============
 SORT OF DONE
 ============
@@ -33,3 +47,4 @@ SORT OF DONE
 DONE
 ============
 > Better bounding box drawings.
+> we have 2 dense layers, the first has no activation !!!
