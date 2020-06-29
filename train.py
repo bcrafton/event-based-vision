@@ -143,7 +143,7 @@ res_block2(512,  512, 2, weights=None), # 5, 6
 res_block1(512,  512, 1, weights=None), # 5, 6
 
 dense_block(5*6*512, 1024, weights=None),
-dense_block(1024, 5*6*12, weights=None),
+dense_block(1024, 5*6*12, weights=None, relu=False),
 ])
 
 params = model.get_params()

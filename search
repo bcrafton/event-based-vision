@@ -1,6 +1,6 @@
 
-# python train.py --gpu 0 --lr 0.01   &
-# python train.py --gpu 1 --lr 0.003  &
-python train.py --epochs 135 --gpu 2 --lr 0.001  &
-# python train.py --gpu 3 --lr 0.0003 &
+python train.py --epochs 50 --gpu 0 --lr 0.01   &
+python train.py --epochs 50 --gpu 1 --lr 0.003  &
+python train.py --epochs 50 --gpu 2 --lr 0.001  &
+python train.py --epochs 50 --gpu 3 --lr 0.0003 &
 
