@@ -82,7 +82,7 @@ class conv_block(layer):
     
     def get_weights(self):
         weights_dict = {}
-        weights_dict[self.layer_id] = {'f': self.f, 'g': self.g, 'b': self.b}
+        weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
         return weights_dict
 
     def get_params(self):
@@ -193,7 +193,7 @@ class dense_block(layer):
 
     def get_weights(self):
         weights_dict = {}
-        weights_dict[self.layer_id] = {'w': self.w, 'b': self.b}
+        weights_dict[self.weight_id] = {'w': self.w, 'b': self.b}
         return weights_dict
         
     def get_params(self):

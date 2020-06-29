@@ -208,8 +208,8 @@ def run_train():
         # print (avg_rate, avg_loss)
         write(name, 'total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
 
-        # trained_weights = model.get_weights()
-        # np.save('trained_weights', trained_weights)
+        trained_weights = model.get_weights()
+        np.save('trained_weights', trained_weights)
 
 ####################################
 

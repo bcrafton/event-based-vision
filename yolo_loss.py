@@ -26,7 +26,7 @@ def calc_iou(boxA, boxB, realBox):
 
 def calc_iou_help(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
-    yA = tf.maximum(boxA[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2])
+    yA = tf.maximum(boxA[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] - 0.5 * boxB[:,:,:,:,2])
     yB = tf.minimum(boxA[:,:,:,:,0] + 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] + 0.5 * boxB[:,:,:,:,2])
 
     xA = tf.maximum(boxA[:,:,:,:,1] - 0.5 * boxA[:,:,:,:,3], boxB[:,:,:,:,1] - 0.5 * boxB[:,:,:,:,3])
@@ -107,7 +107,9 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     ############################
 
     iou = calc_iou(pred_box1, pred_box2, label_box)
-    resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # pretty sure less/greater->bool is ideal because we use this thing in tf.where below
+    resp_box = tf.less(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
 
     ######################################
 
