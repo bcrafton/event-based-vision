@@ -1,9 +1,35 @@
 
+> Loader which preloads the numpy files.
+
+> Mean average precision.
+  > https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox
+  '''
+  import numpy as np
+  from src.metrics.coco_eval import evaluate_detection
+
+  RESULT_FILE_PATHS = ["file1_results_bbox.npy", "file2_results_bbox.npy"]
+  GT_FILE_PATHS = ["file1_bbox.npy", "file2_bbox.npy"]
+
+  result_boxes_list = [np.load(p) for p in RESULT_FILE_PATHS]
+  gt_boxes_list = [np.load(p) for p in GT_FILE_PATHS]
+
+  evaluate_detection(gt_boxes_list, result_boxes_list)
+  '''
+  > so there is incentive to not use the data loader ...
+    > well i mean we can just change both the codes.
+
+  > cocoapi thing being a pain in the ass:
+    > https://github.com/cocodataset/cocoapi/issues/180
+
+============
+SORT OF DONE
+============
 > XY WH confusion
 
 > Hyperparameter search = {results, run_results, get_results}
   > Learning rate schedule
-
+  
+============
+DONE
+============
 > Better bounding box drawings.
-
-> Loader which preloads the numpy files.
