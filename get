@@ -1,5 +1,6 @@
 
-bcrafton3@ICSRL-Exxact1:~/Data_SSD/event-based-vision$ zip -r results.zip results/
+zip -r results.zip results/
+
 scp bcrafton3@ICSRL-Exxact1:/home/bcrafton3/Data_SSD/event-based-vision/results.zip .
 
 scp bcrafton3@icsrl-srv2.ece.gatech.edu:/usr/scratch/bcrafton/results.zip .

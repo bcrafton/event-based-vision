@@ -2,6 +2,7 @@
 
 > Loader which preloads the numpy files.
 > SQRT {H, W}
+> add train_b
 
 ============
 
