@@ -40,7 +40,7 @@ def calc_map(truth, pred):
         
         box1  = grid_to_pix(pred[n][:, :, 0:4])
         conf1 = pred[n][:, :, 4]
-        obj1 = np.where(conf1 > 0)
+        obj1 = np.where(conf1 > 1)
         boxes1 = box1[obj1]
         conf1 = conf1[obj1]
         cat1 = cat[obj1]
@@ -52,7 +52,7 @@ def calc_map(truth, pred):
         
         box2  = grid_to_pix(pred[n][:, :, 5:9])
         conf2 = pred[n][:, :, 9]
-        obj2 = np.where(conf2 > 0)
+        obj2 = np.where(conf2 > 1)
         boxes2 = box2[obj2]
         conf2 = conf2[obj2]
         cat2 = cat[obj2]
