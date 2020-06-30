@@ -23,8 +23,8 @@ def grid_to_pix(box):
 
 def grid_to_pix(box):
     pix_box_yx = 48. * box[:, :, :, :, 0:2] + offset
-    pix_box_h = tf.square(box[:, :, :, :, 2:3] * tf.sqrt(240.))
-    pix_box_w = tf.square(box[:, :, :, :, 3:4] * tf.sqrt(288.))
+    pix_box_h = tf.square(box[:, :, :, :, 2:3]) * 240.
+    pix_box_w = tf.square(box[:, :, :, :, 3:4]) * 288.
     pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
     return pix_box
 

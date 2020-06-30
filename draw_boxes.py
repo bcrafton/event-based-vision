@@ -36,8 +36,8 @@ offset_np = [
 
 def grid_to_pix(box):
     box[..., 0:2] = 48.  * box[..., 0:2] + offset_np
-    box[..., 2]   = np.square(box[..., 2] * np.sqrt(240.))
-    box[..., 3]   = np.square(box[..., 3] * np.sqrt(288.))
+    box[..., 2]   = np.square(box[..., 2]) * 240.
+    box[..., 3]   = np.square(box[..., 3]) * 288.
     return box
 
 ##############################################################

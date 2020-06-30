@@ -4,9 +4,9 @@ import os
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', type=int, default=25)
+parser.add_argument('--epochs', type=int, default=100)
 # parser.add_argument('--batch_size', type=int, default=50)
-parser.add_argument('--lr', type=float, default=1e-3)
+parser.add_argument('--lr', type=float, default=1e-4)
 parser.add_argument('--gpu', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
 args = parser.parse_args()
@@ -102,9 +102,9 @@ def det_tensor(dets, max_nd):
         
         x = (x - xc * 48.) / 48. # might want to clip this to zero
         y = (y - yc * 48.) / 48. # might want to clip this to zero
-        w = np.sqrt(w) / np.sqrt(288.)
-        h = np.sqrt(h) / np.sqrt(240.)
-        
+        w = np.sqrt(w / 288.)
+        h = np.sqrt(h / 240.)
+
         x = np.clip(x, 0, 1)
         y = np.clip(y, 0, 1)
         w = np.clip(w, 0, 1)
@@ -166,6 +166,11 @@ def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
         out = model.train(x)
         out = tf.reshape(out, (8, 5, 6, 12))
+        '''
+        out = tf.concat((out[:, :, :, 0:4], tf.nn.sigmoid(out[:, :, :, 4:5]),
+                         out[:, :, :, 5:9], tf.nn.sigmoid(out[:, :, :, 9:10]),
+                         out[:, :, :, 10:12]), axis=3)
+        '''
         loss = yolo_loss(out, coord, obj, no_obj, cat, vld)
     
     grad = tape.gradient(loss, params)
@@ -181,7 +186,7 @@ def write(filename, text):
 
 ####################################
 
-N = 250
+N = 25
 def run_train():
     batch_size = 8    
 
