@@ -102,7 +102,10 @@ if __name__ == '__main__':
             if file_extension == '.dat':
                 records.append(os.path.join(subdir, file))
 
-    print (records)
+    records = sorted(records)
+    for record in records:
+        print (record)
+
     play_files_parallel(records, skip=0, delta_t=20000)
     
     
