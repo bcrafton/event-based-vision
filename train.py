@@ -120,8 +120,8 @@ def det_tensor(dets, max_nd):
 
 ####################################
 
-# load weights, hope the weight id matches up.
-weights = np.load('resnet18.npy', allow_pickle=True).item()
+# weights = np.load('resnet18.npy', allow_pickle=True).item()
+weights = np.load('/home/bcrafton3/Data_SSD/6254/weights/resnet18.npy', allow_pickle=True).item()
 
 # 240, 288
 model = model(layers=[
@@ -181,7 +181,7 @@ def write(filename, text):
 
 ####################################
 
-N = 250
+N = 25 # set up to 250.
 def run_train():
     batch_size = 8    
 
@@ -191,7 +191,8 @@ def run_train():
         start = time.time()
 
         for n in range(N):
-            filename = './dataset/data/%d.npy' % (n)
+            # filename = './dataset/data/%d.npy' % (n)
+            filename = '/home/bcrafton3/Data_SSD/6254/dataset/%d.npy' % (n)
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
 
