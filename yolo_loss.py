@@ -2,33 +2,30 @@
 import numpy as np
 import tensorflow as tf
 
-'''
-offset_np = [
-[[0, 0],   [0, 64],   [0, 128],   [0, 192],   [0, 256],   [0, 320],   [0, 384]], 
-[[64, 0],  [64, 64],  [64, 128],  [64, 192],  [64, 256],  [64, 320],  [64, 384]], 
-[[128, 0], [128, 64], [128, 128], [128, 192], [128, 256], [128, 320], [128, 384]], 
-[[192, 0], [192, 64], [192, 128], [192, 192], [192, 256], [192, 320], [192, 384]], 
-[[256, 0], [256, 64], [256, 128], [256, 192], [256, 256], [256, 320], [256, 384]],  
-[[320, 0], [320, 64], [320, 128], [320, 192], [320, 256], [320, 320], [320, 384]],  
-[[384, 0], [384, 64], [384, 128], [384, 192], [384, 256], [384, 320], [384, 384]]
-]
-'''
-
 offset_np = [
 [  [0, 0],   [0, 48],   [0, 96],   [0, 144],   [0, 192],   [0, 240]], 
 [ [48, 0],  [48, 48],  [48, 96],  [48, 144],  [48, 192],  [48, 240]], 
-[ [96, 0],  [96, 48],  [96, 96],  [96, 144], [128, 192], [128, 240]], 
+[ [96, 0],  [96, 48],  [96, 96],  [96, 144],  [96, 192],  [96, 240]], 
 [[144, 0], [144, 48], [144, 96], [144, 144], [144, 192], [144, 240]], 
 [[192, 0], [192, 48], [192, 96], [192, 144], [192, 192], [192, 240]]
 ]
 
 offset = tf.constant(offset_np, dtype=tf.float32)
 
+'''
 def grid_to_pix(box):
-    pix_box_xy = 48. * box[:, :, :, :, 0:2] + offset
-    pix_box_w = box[:, :, :, :, 0:1] * 288. 
-    pix_box_h = box[:, :, :, :, 1:2] * 240.
-    pix_box = tf.concat((pix_box_xy, pix_box_w, pix_box_h), axis=4)
+    pix_box_yx = 48. * box[:, :, :, :, 0:2] + offset
+    pix_box_h = box[:, :, :, :, 2:3] * 240. 
+    pix_box_w = box[:, :, :, :, 3:4] * 288.
+    pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
+    return pix_box
+'''
+
+def grid_to_pix(box):
+    pix_box_yx = 48. * box[:, :, :, :, 0:2] + offset
+    pix_box_h = tf.square(box[:, :, :, :, 2:3] * tf.sqrt(240.))
+    pix_box_w = tf.square(box[:, :, :, :, 3:4] * tf.sqrt(288.))
+    pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
     return pix_box
 
 def calc_iou(boxA, boxB, realBox):
@@ -38,16 +35,16 @@ def calc_iou(boxA, boxB, realBox):
 
 def calc_iou_help(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
-    xA = tf.maximum(boxA[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2])
-    xB = tf.minimum(boxA[:,:,:,:,0] + 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] + 0.5 * boxB[:,:,:,:,2])
+    yA = tf.maximum(boxA[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] - 0.5 * boxB[:,:,:,:,2])
+    yB = tf.minimum(boxA[:,:,:,:,0] + 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] + 0.5 * boxB[:,:,:,:,2])
 
-    yA = tf.maximum(boxA[:,:,:,:,1] - 0.5 * boxA[:,:,:,:,3], boxB[:,:,:,:,1] - 0.5 * boxB[:,:,:,:,3])
-    yB = tf.minimum(boxA[:,:,:,:,1] + 0.5 * boxA[:,:,:,:,3], boxB[:,:,:,:,1] + 0.5 * boxB[:,:,:,:,3])
+    xA = tf.maximum(boxA[:,:,:,:,1] - 0.5 * boxA[:,:,:,:,3], boxB[:,:,:,:,1] - 0.5 * boxB[:,:,:,:,3])
+    xB = tf.minimum(boxA[:,:,:,:,1] + 0.5 * boxA[:,:,:,:,3], boxB[:,:,:,:,1] + 0.5 * boxB[:,:,:,:,3])
 
     # compute the area of intersection rectangle
-    ix = xB - xA
     iy = yB - yA
-    interArea = tf.maximum(tf.zeros_like(ix), ix) * tf.maximum(tf.zeros_like(iy), iy)
+    ix = xB - xA
+    interArea = tf.maximum(tf.zeros_like(iy), iy) * tf.maximum(tf.zeros_like(ix), ix)
 
     # compute the area of both the prediction and ground-truth rectangles
     boxAArea = tf.abs(boxA[:,:,:,:,2] * boxA[:,:,:,:,3])
@@ -60,6 +57,18 @@ def calc_iou_help(boxA, boxB):
 
     # return the intersection over union value
     return iou
+
+@tf.custom_gradient
+def abs_no_grad(x):
+    def grad(dy):
+        return dy
+    return tf.abs(x), grad
+
+@tf.custom_gradient
+def sign_no_grad(x):
+    def grad(dy):
+        return dy
+    return tf.sign(x), grad
 
 def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
@@ -79,15 +88,19 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
     ############################
 
-    label_xy = label[:, :, :, :, 0:2]
-    pred_xy1 = pred[:, :, :, :, 0:2]
-    pred_xy2 = pred[:, :, :, :, 5:7]
+    label_yx = label[:, :, :, :, 0:2]
+    pred_yx1 = pred[:, :, :, :, 0:2]
+    pred_yx2 = pred[:, :, :, :, 5:7]
 
     ############################
 
-    label_wh = tf.sqrt(label[:, :, :, :, 2:4])
-    pred_wh1 = tf.sqrt(tf.abs(pred[:, :, :, :, 2:4])) * tf.sign(pred[:, :, :, :, 2:4])
-    pred_wh2 = tf.sqrt(tf.abs(pred[:, :, :, :, 7:9])) * tf.sign(pred[:, :, :, :, 7:9])
+    # label_hw = tf.sqrt(label[:, :, :, :, 2:4])
+    # pred_hw1 = tf.sqrt(abs_no_grad(pred[:, :, :, :, 2:4])) * sign_no_grad(pred[:, :, :, :, 2:4])
+    # pred_hw2 = tf.sqrt(abs_no_grad(pred[:, :, :, :, 7:9])) * sign_no_grad(pred[:, :, :, :, 7:9])
+
+    label_hw = label[:, :, :, :, 2:4]
+    pred_hw1 = pred[:, :, :, :, 2:4]
+    pred_hw2 = pred[:, :, :, :, 7:9]
 
     ############################
 
@@ -103,23 +116,23 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     ############################
 
     iou = calc_iou(pred_box1, pred_box2, label_box)
-    resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # pretty sure less/greater->bool is ideal because we use this thing in tf.where below
+    resp_box = tf.less(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
 
     ######################################
 
-    loss_xy1 = tf.reduce_sum(tf.square(pred_xy1 - label_xy), axis=4)
-    loss_xy2 = tf.reduce_sum(tf.square(pred_xy2 - label_xy), axis=4)
-    xy_loss = 5. * obj * vld * tf.where(resp_box, loss_xy1, loss_xy2)
-    xy_loss = tf.reduce_mean(tf.reduce_sum(xy_loss, axis=[2, 3]))
-
-    # xy_loss = tf.Print(xy_loss, [tf.shape(loss_xy1), tf.shape(resp_box)], message='', summarize=1000)
+    loss_yx1 = tf.reduce_sum(tf.square(pred_yx1 - label_yx), axis=4)
+    loss_yx2 = tf.reduce_sum(tf.square(pred_yx2 - label_yx), axis=4)
+    yx_loss = 5. * obj * vld * tf.where(resp_box, loss_yx1, loss_yx2)
+    yx_loss = tf.reduce_mean(tf.reduce_sum(yx_loss, axis=[2, 3]))
 
     ######################################
 
-    loss_wh1 = tf.reduce_sum(tf.square(pred_wh1 - label_wh), axis=4)
-    loss_wh2 = tf.reduce_sum(tf.square(pred_wh2 - label_wh), axis=4)
-    wh_loss = 5. * obj * vld * tf.where(resp_box, loss_wh1, loss_wh2)
-    wh_loss = tf.reduce_mean(tf.reduce_sum(wh_loss, axis=[2, 3]))
+    loss_hw1 = tf.reduce_sum(tf.square(pred_hw1 - label_hw), axis=4)
+    loss_hw2 = tf.reduce_sum(tf.square(pred_hw2 - label_hw), axis=4)
+    hw_loss = 5. * obj * vld * tf.where(resp_box, loss_hw1, loss_hw2)
+    hw_loss = tf.reduce_mean(tf.reduce_sum(hw_loss, axis=[2, 3]))
 
     ######################################
 
@@ -135,26 +148,16 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     no_obj_loss = 0.5 * no_obj * vld * tf.where(resp_box, loss_no_obj1, loss_no_obj2)
     no_obj_loss = tf.reduce_mean(tf.reduce_sum(no_obj_loss, axis=[2, 3]))
 
-    # xy_loss = tf.Print(xy_loss, [tf.shape(pred_conf1), tf.shape(label_conf), tf.count_nonzero(loss_no_obj1), tf.count_nonzero(no_obj)], message='', summarize=1000)
-    # xy_loss = tf.Print(xy_loss, [tf.shape(vld), tf.shape(no_obj), tf.reduce_sum(loss_no_obj1), tf.reduce_sum(loss_no_obj2)], message='', summarize=1000)
-    # xy_loss = tf.Print(xy_loss, [tf.count_nonzero(vld), tf.count_nonzero(vld * no_obj), tf.reduce_sum(vld * loss_no_obj1), tf.reduce_sum(vld * loss_no_obj2)], message='', summarize=1000)
-    # xy_loss = tf.Print(xy_loss, [tf.shape(vld), tf.shape(obj), tf.shape(no_obj), tf.count_nonzero(vld), tf.count_nonzero(no_obj), tf.count_nonzero(obj)], message='', summarize=1000)
-    # xy_loss = tf.Print(xy_loss, [tf.shape(vld), tf.shape(obj), tf.shape(pred_cat), tf.shape(label_cat)], message='', summarize=1000)
-
     ######################################
-    '''
-    pred_cat = tf.expand_dims(vld, axis=4) * tf.expand_dims(obj, axis=4) * pred_cat
-    cat_loss = tf.reduce_mean(tf.square(pred_cat - label_cat), axis=4)
-    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
-    '''
 
     cat_loss = 2. * obj * vld * tf.reduce_sum(tf.square(pred_cat - label_cat), axis=4)
     cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
 
     ######################################
 
-    # return xy_loss, wh_loss, obj_loss, no_obj_loss, cat_loss
-    loss = xy_loss + wh_loss + obj_loss + no_obj_loss + cat_loss
+    # print (yx_loss.numpy(), hw_loss.numpy(), obj_loss.numpy(), no_obj_loss.numpy(), cat_loss.numpy())
+    
+    loss = yx_loss + hw_loss + obj_loss + no_obj_loss + cat_loss
     return loss
 
 

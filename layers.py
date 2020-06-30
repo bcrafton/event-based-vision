@@ -82,7 +82,7 @@ class conv_block(layer):
     
     def get_weights(self):
         weights_dict = {}
-        weights_dict[self.layer_id] = {'f': self.f, 'g': self.g, 'b': self.b}
+        weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
         return weights_dict
 
     def get_params(self):
@@ -168,7 +168,7 @@ class res_block2(layer):
 #############
 
 class dense_block(layer):
-    def __init__(self, isize, osize, weights=None):
+    def __init__(self, isize, osize, weights=None, relu=True):
         self.weight_id = layer.weight_id
         layer.weight_id += 1
         self.layer_id = layer.layer_id
@@ -176,7 +176,8 @@ class dense_block(layer):
         
         self.isize = isize
         self.osize = osize
-        
+        self.relu = relu
+
         if weights:
             w, b = weights[self.weight_id]['w'], weights[self.weight_id]['b']
             self.w = tf.Variable(w, dtype=tf.float32)
@@ -189,11 +190,13 @@ class dense_block(layer):
     def train(self, x):
         x = tf.reshape(x, (-1, self.isize))
         fc = tf.matmul(x, self.w) + self.b
-        return fc
+        if self.relu: out = tf.nn.relu(fc)
+        else:         out = fc
+        return out
 
     def get_weights(self):
         weights_dict = {}
-        weights_dict[self.layer_id] = {'w': self.w, 'b': self.b}
+        weights_dict[self.weight_id] = {'w': self.w, 'b': self.b}
         return weights_dict
         
     def get_params(self):

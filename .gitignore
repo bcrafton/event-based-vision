@@ -4,3 +4,5 @@
 *.npy
 nohup.out
 *.pyc
+*.jpg
+*.dat
