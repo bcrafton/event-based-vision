@@ -5,7 +5,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-# parser.add_argument('--batch_size', type=int, default=50)
+parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--lr', type=float, default=1e-5)
 parser.add_argument('--gpu', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -166,13 +166,13 @@ optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0
 def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
         out = model.train(x)
-        out = tf.reshape(out, (8, 5, 6, 12))
+        out = tf.reshape(out, (args.batch_size, 5, 6, 12))
         '''
         out = tf.concat((out[:, :, :, 0:4], tf.nn.sigmoid(out[:, :, :, 4:5]),
                          out[:, :, :, 5:9], tf.nn.sigmoid(out[:, :, :, 9:10]),
                          out[:, :, :, 10:12]), axis=3)
         '''
-        loss, losses = yolo_loss(out, coord, obj, no_obj, cat, vld)
+        loss, losses = yolo_loss(args.batch_size, out, coord, obj, no_obj, cat, vld)
     
     grad = tape.gradient(loss, params)
     return out, loss, losses, grad
@@ -189,7 +189,6 @@ def write(filename, text):
 
 N = 25
 def run_train():
-    batch_size = 8    
 
     for epoch in range(args.epochs):
         total_yx_loss = 0
@@ -207,9 +206,9 @@ def run_train():
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
 
-            for batch in range(0, len(xs), batch_size):
+            for batch in range(0, len(xs), args.batch_size):
                 s = batch
-                e = batch + batch_size
+                e = batch + args.batch_size
                 if e > len(xs): continue
                 
                 x = xs[s:e].astype(np.float32)
@@ -233,7 +232,7 @@ def run_train():
                 total_cat_loss    += cat_loss.numpy()
 
                 total_loss += loss.numpy()
-                total += batch_size
+                total += args.batch_size
                 
                 if (epoch % 5) == 0:
                     nd = np.count_nonzero(obj[0])
@@ -247,7 +246,7 @@ def run_train():
         cat_loss    = int(total_cat_loss    / total_loss * 100)
 
         # avg_loss = total_loss / total
-        avg_loss = total_loss / (total / batch_size) # we reduce_mean over (batch,detection) (0,1)
+        avg_loss = total_loss / (total / args.batch_size) # we reduce_mean over (batch,detection) (0,1)
         avg_rate = total / (time.time() - start)
         # print (avg_rate, avg_loss)
         write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))

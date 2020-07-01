@@ -70,7 +70,7 @@ def sign_no_grad(x):
         return dy
     return tf.sign(x), grad
 
-def yolo_loss(pred, label, obj, no_obj, cat, vld):
+def yolo_loss(batch_size, pred, label, obj, no_obj, cat, vld):
 
     # pred   = [4,     7, 7, 90]
     # label  = [4, -1, 7, 7, 5]
@@ -78,7 +78,7 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     # no_obj = [4, -1, 7, 7]
     # cat    = [4, -1, 7, 7]
 
-    pred = tf.reshape(pred, [8, 1, 5, 6, 12])
+    pred = tf.reshape(pred, [batch_size, 1, 5, 6, 12])
 
     ######################################
 
