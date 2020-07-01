@@ -11,7 +11,7 @@ parser.add_argument('--gpu', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
 args = parser.parse_args()
 
-name = '%d_%f.results' % (args.gpu, args.lr)
+name = '%d_%f' % (args.gpu, args.lr)
 
 ####################################
 
@@ -186,7 +186,7 @@ def write(filename, text):
 
 ####################################
 
-N = 25
+N = 500
 def run_train():
     batch_size = 8    
 
@@ -222,10 +222,10 @@ def run_train():
         avg_loss = total_loss / (total / batch_size) # we reduce_mean over (batch,detection) (0,1)
         avg_rate = total / (time.time() - start)
         # print (avg_rate, avg_loss)
-        write(name, 'total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
+        write(name + '.results', 'total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
 
         trained_weights = model.get_weights()
-        np.save('trained_weights', trained_weights)
+        np.save(name + '_weights', trained_weights)
 
 ####################################
 
