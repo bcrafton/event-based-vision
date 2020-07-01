@@ -6,7 +6,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
 # parser.add_argument('--batch_size', type=int, default=50)
-parser.add_argument('--lr', type=float, default=1e-4)
+parser.add_argument('--lr', type=float, default=1e-5)
 parser.add_argument('--gpu', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
 args = parser.parse_args()
@@ -38,6 +38,7 @@ tf.config.experimental.set_memory_growth(gpu, True)
 
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
+from calc_map import calc_map
 
 ####################################
 
@@ -211,12 +212,19 @@ def run_train():
                 out, loss, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
                 optimizer.apply_gradients(zip(grad, params))
                 
+                '''
+                try:
+                    calc_map(ys[s:e], out.numpy())
+                except:
+                    pass
+                '''
+                
                 total_loss += loss.numpy()
                 total += batch_size
                 
                 if (epoch % 5) == 0:
                     nd = np.count_nonzero(obj[0])
-                    draw_box('./results/%d_%d.jpg' % (n, batch), x[0, :, :, -1], coord[0], out.numpy()[0], nd)
+                    draw_box('./results/%d_%d.jpg' % (n, batch), np.sum(x[0, :, :, :], axis=2), coord[0], out.numpy()[0], nd)
 
         # avg_loss = total_loss / total
         avg_loss = total_loss / (total / batch_size) # we reduce_mean over (batch,detection) (0,1)

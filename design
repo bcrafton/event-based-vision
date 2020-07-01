@@ -17,6 +17,11 @@ Best Yolo Loss Reference:
 
 ============
 
+> thinking something is wrong with our model.
+  > would like to try VGG11 or something.
+
+============
+
 > Mean average precision.
   > https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox
   '''
