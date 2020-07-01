@@ -12,6 +12,9 @@
 
 > run smaller training set ? 
 
+Best Yolo Loss Reference:
+> https://github.com/MingtaoGuo/yolo_v1_v2_tensorflow/blob/master/ops.py
+
 ============
 
 > Mean average precision.

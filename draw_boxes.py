@@ -111,9 +111,9 @@ def draw_box(name, image, label, pred, nbox):
         
     for yc in range (5):
         for xc in range(6):
-            if conf1[yc][xc] > 1:
+            if conf1[yc][xc] > 0.5:
                 draw_box_help(pred_image, boxs1[yc][xc], None)
-            if conf2[yc][xc] > 1:
+            if conf2[yc][xc] > 0.5:
                 draw_box_help(pred_image, boxs2[yc][xc], None)
         
     concat = np.concatenate((true_image, pred_image), axis=1)
