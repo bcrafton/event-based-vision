@@ -178,7 +178,7 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     # print (yx_loss.numpy(), hw_loss.numpy(), obj_loss.numpy(), no_obj_loss.numpy(), cat_loss.numpy())
     
     loss = yx_loss + hw_loss + obj_loss + no_obj_loss + cat_loss
-    return loss
+    return loss, (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss)
 
 
 
