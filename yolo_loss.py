@@ -150,7 +150,8 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
     loss_obj1 = tf.square(pred_conf1 - 1) * obj_mask1
     loss_obj2 = tf.square(pred_conf2 - 1) * obj_mask2
-    obj_loss = 1. * obj * vld * (loss_obj1 + loss_obj2)
+    # obj_loss = 1. * obj * vld * (loss_obj1 + loss_obj2)
+    obj_loss = 1. * vld * (loss_obj1 + loss_obj2)
     obj_loss = tf.reduce_mean(tf.reduce_sum(obj_loss, axis=[2, 3]))
 
     ######################################    
@@ -163,7 +164,8 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
     loss_no_obj1 = tf.square(pred_conf1) * no_obj_mask1
     loss_no_obj2 = tf.square(pred_conf2) * no_obj_mask2
-    no_obj_loss = 0.5 * no_obj * vld * (loss_no_obj1 + loss_no_obj2)
+    # no_obj_loss = 0.5 * no_obj * vld * (loss_no_obj1 + loss_no_obj2)
+    no_obj_loss = 0.5 * vld * (loss_no_obj1 + loss_no_obj2)
     no_obj_loss = tf.reduce_mean(tf.reduce_sum(no_obj_loss, axis=[2, 3]))
 
     ######################################
