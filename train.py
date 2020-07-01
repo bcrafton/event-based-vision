@@ -187,7 +187,7 @@ def write(filename, text):
 
 ####################################
 
-N = 500
+N = 25
 def run_train():
     batch_size = 8    
 
@@ -240,17 +240,17 @@ def run_train():
                     draw_box('./results/%d_%d.jpg' % (n, batch), np.sum(x[0, :, :, :], axis=2), coord[0], out.numpy()[0], nd)
 
 
-        yx_loss     = round(total_yx_loss     / total_loss * 100, 2)
-        hw_loss     = round(total_hw_loss     / total_loss * 100, 2)
-        obj_loss    = round(total_obj_loss    / total_loss * 100, 2)
-        no_obj_loss = round(total_no_obj_loss / total_loss * 100, 2)
-        cat_loss    = round(total_cat_loss    / total_loss * 100, 2)
+        yx_loss     = int(total_yx_loss     / total_loss * 100)
+        hw_loss     = int(total_hw_loss     / total_loss * 100)
+        obj_loss    = int(total_obj_loss    / total_loss * 100)
+        no_obj_loss = int(total_no_obj_loss / total_loss * 100)
+        cat_loss    = int(total_cat_loss    / total_loss * 100)
 
         # avg_loss = total_loss / total
         avg_loss = total_loss / (total / batch_size) # we reduce_mean over (batch,detection) (0,1)
         avg_rate = total / (time.time() - start)
         # print (avg_rate, avg_loss)
-        write(name + '.results', 'total: %d, rate: %f, loss %f (%f %f %f %f %f)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
+        write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
 
         trained_weights = model.get_weights()
         np.save(name + '_weights', trained_weights)
