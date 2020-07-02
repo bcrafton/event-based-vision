@@ -4,5 +4,5 @@ zip -r results.zip results/;
 cd results;
 rm *.jpg;
 rm *.npy;
-scp results.zip bcrafton3@icsrl-srv2.ece.gatech.edu:/usr/scratch/bcrafton/;
+scp results.zip bcrafton3@icsrl-srv2.ece.gatech.edu:/usr/scratch/bcrafton/
 
