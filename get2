@@ -1,0 +1,3 @@
+
+scp bcrafton3@icsrl-srv2.ece.gatech.edu:/usr/scratch/bcrafton/results.zip . ;
+unzip results.zip -d srv_results ;
