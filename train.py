@@ -5,7 +5,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=16)
+parser.add_argument('--batch_size', type=int, default=4)
 parser.add_argument('--lr', type=float, default=1e-5)
 parser.add_argument('--gpu', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -130,31 +130,33 @@ conv_block((7,7,12,64), 1, weights=None), # 240, 288
 
 max_pool(s=3, p=3),
 
-res_block1(64,   64, 1, weights=weights), # 80, 96
-res_block1(64,   64, 1, weights=weights), # 80, 96
+res_block1(64,   64, 1, weights=None), # 80, 96
+# res_block1(64,   64, 1, weights=weights), # 80, 96
 
 max_pool(s=2, p=2),
 
-res_block2(64,   128, 1, weights=weights), # 40, 48
-res_block1(128,  128, 1, weights=weights), # 40, 48
+res_block2(64,   128, 1, weights=None), # 40, 48
+# res_block1(128,  128, 1, weights=weights), # 40, 48
 
 max_pool(s=2, p=2),
 
-res_block2(128,  256, 1, weights=weights), # 20, 24
-res_block1(256,  256, 1, weights=weights), # 20, 24
+res_block2(128,  256, 1, weights=None), # 20, 24
+# res_block1(256,  256, 1, weights=weights), # 20, 24
 
 max_pool(s=2, p=2),
 
-res_block2(256,  512, 1, weights=weights), # 10, 12
-res_block1(512,  512, 1, weights=weights), # 10, 12
+res_block2(256,  512, 1, weights=None), # 10, 12
+# res_block1(512,  512, 1, weights=weights), # 10, 12
 
 max_pool(s=2, p=2),
 
-res_block2(512,  512, 1, weights=None), # 5, 6
-res_block1(512,  512, 1, weights=None), # 5, 6
+# res_block2(512,  512, 1, weights=weights), # 5, 6
+# res_block1(512,  512, 1, weights=weights), # 5, 6
 
-dense_block(5*6*512, 1024, weights=None),
-dense_block(1024, 5*6*12, weights=None, relu=False),
+# dense_block(5*6*512, 1024, weights=weights),
+# dense_block(1024, 5*6*12, weights=weights, relu=False),
+
+dense_block(5*6*512, 5*6*12, weights=None, relu=False),
 ])
 
 params = model.get_params()
