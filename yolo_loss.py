@@ -118,7 +118,9 @@ def yolo_loss(batch_size, pred, label, obj, no_obj, cat, vld):
     iou = calc_iou(pred_box1, pred_box2, label_box)
     # resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
     # pretty sure less/greater->bool is ideal because we use this thing in tf.where below
-    resp_box = tf.less(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # resp_box = tf.less(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # we are a moron. tf.where -> if resp_box: 0 else: 1 ...
+    resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
 
     obj_mask1 = obj * tf.cast(tf.greater_equal(iou[:, :, :, :, 0], iou[:, :, :, :, 1]), tf.float32)
     obj_mask2 = obj * tf.cast(tf.greater      (iou[:, :, :, :, 1], iou[:, :, :, :, 0]), tf.float32)
