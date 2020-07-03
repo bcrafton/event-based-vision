@@ -9,6 +9,7 @@ parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--lr', type=float, default=1e-5)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
+parser.add_argument('--local', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
 args = parser.parse_args()
 
@@ -209,8 +210,10 @@ def run_train():
         start = time.time()
 
         for n in range(N):
-            # filename = './dataset/data/%d.npy' % (n)
-            filename = '/home/bcrafton3/Data_SSD/6254/dataset/%d.npy' % (n)
+            if args.local:
+                filename = './dataset/data/%d.npy' % (n)
+            else:
+                filename = '/home/bcrafton3/Data_SSD/6254/dataset/%d.npy' % (n)
             
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
@@ -224,7 +227,8 @@ def run_train():
                 coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
                 
                 out, loss, losses, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
-                optimizer.apply_gradients(zip(grad, params))
+                if args.train:
+                    optimizer.apply_gradients(zip(grad, params))
                 
                 if not args.train:
                     try:
