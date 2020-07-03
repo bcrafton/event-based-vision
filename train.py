@@ -209,7 +209,9 @@ def run_train():
         start = time.time()
 
         for n in range(N):
-            filename = './dataset/data/%d.npy' % (n)
+            # filename = './dataset/data/%d.npy' % (n)
+            filename = '/home/bcrafton3/Data_SSD/6254/dataset/%d.npy' % (n)
+            
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
 
