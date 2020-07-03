@@ -5,7 +5,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=4)
+parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--lr', type=float, default=1e-5)
 parser.add_argument('--gpu', type=int, default=0)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -189,7 +189,7 @@ def write(filename, text):
 
 ####################################
 
-N = 25
+N = 500
 def run_train():
 
     for epoch in range(args.epochs):
