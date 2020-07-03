@@ -1,0 +1,68 @@
+============
+
+Top Wants:
+> mAP for the whole evaluation set.
+> Loader
+
+============
+
+> Mean average precision.
+  > https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox
+  '''
+  import numpy as np
+  from src.metrics.coco_eval import evaluate_detection
+
+  RESULT_FILE_PATHS = ["file1_results_bbox.npy", "file2_results_bbox.npy"]
+  GT_FILE_PATHS = ["file1_bbox.npy", "file2_bbox.npy"]
+
+  result_boxes_list = [np.load(p) for p in RESULT_FILE_PATHS]
+  gt_boxes_list = [np.load(p) for p in GT_FILE_PATHS]
+
+  evaluate_detection(gt_boxes_list, result_boxes_list)
+  '''
+  > so there is incentive to not use the data loader ...
+    > well i mean we can just change both the codes.
+
+  > cocoapi thing being a pain in the ass:
+    > https://github.com/cocodataset/cocoapi/issues/180
+
+  Precision = TP / (TP + FP)
+  Recall = TP / (TP + FN)
+
+
+will we have to dig into the scripts ? 
+> maxDets
+> small, medium, large
+> ID, time stamp
+> not actually getting: mAP
+
+============
+SORT OF DONE
+============
+
+> XY WH confusion
+
+> Hyperparameter search = {results, run_results, get_results}
+  > Learning rate schedule
+  
+> is 'vld' redundant ?
+  > not really.
+  
+============
+DONE
+============
+> Better bounding box drawings.
+> we have 2 dense layers, the first has no activation !!!
+
+> thinking something is wrong with our model.
+  > would like to try VGG11 or something.
+  
+> 5x5, stride 3 is kinda sparse ... maybe go higher ? 
+> can we use pools instead of strides ? 
+> increase batch size for batch norm ?
+
+> SQRT {H, W}
+  
+> add train_b
+
+
