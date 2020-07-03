@@ -3,6 +3,12 @@
 
 This repository contains template code for event based vision using an augmented YOLO object detector
 
+We have used Prophesee's wonderful dataset available here:
+https://www.prophesee.ai/2020/01/24/prophesee-gen1-automotive-detection-dataset/
+
+And their data visualization and extraction code available here:
+https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox
+
 ## Getting Started
 
 It is intended to run on our lab server: icsrl-exxact1.ece.gatech.edu
