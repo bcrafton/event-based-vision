@@ -23,8 +23,8 @@ def grid_to_pix(box):
 
 def grid_to_pix(box):
     pix_box_yx = 48. * box[:, :, :, :, 0:2] + offset
-    pix_box_h = tf.square(box[:, :, :, :, 2:3] * tf.sqrt(240.))
-    pix_box_w = tf.square(box[:, :, :, :, 3:4] * tf.sqrt(288.))
+    pix_box_h = tf.square(box[:, :, :, :, 2:3]) * 240.
+    pix_box_w = tf.square(box[:, :, :, :, 3:4]) * 288.
     pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
     return pix_box
 
@@ -70,7 +70,7 @@ def sign_no_grad(x):
         return dy
     return tf.sign(x), grad
 
-def yolo_loss(pred, label, obj, no_obj, cat, vld):
+def yolo_loss(batch_size, pred, label, obj, no_obj, cat, vld):
 
     # pred   = [4,     7, 7, 90]
     # label  = [4, -1, 7, 7, 5]
@@ -78,7 +78,7 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     # no_obj = [4, -1, 7, 7]
     # cat    = [4, -1, 7, 7]
 
-    pred = tf.reshape(pred, [8, 1, 5, 6, 12])
+    pred = tf.reshape(pred, [batch_size, 1, 5, 6, 12])
 
     ######################################
 
@@ -118,7 +118,15 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     iou = calc_iou(pred_box1, pred_box2, label_box)
     # resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
     # pretty sure less/greater->bool is ideal because we use this thing in tf.where below
-    resp_box = tf.less(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # resp_box = tf.less(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+    # we are a moron. tf.where -> if resp_box: 0 else: 1 ...
+    resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
+
+    obj_mask1 = obj * tf.cast(tf.greater_equal(iou[:, :, :, :, 0], iou[:, :, :, :, 1]), tf.float32)
+    obj_mask2 = obj * tf.cast(tf.greater      (iou[:, :, :, :, 1], iou[:, :, :, :, 0]), tf.float32)
+
+    no_obj_mask1 = 1 - obj_mask1
+    no_obj_mask2 = 1 - obj_mask2
 
     ######################################
 
@@ -136,16 +144,30 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
 
     ######################################
 
+    '''
     loss_obj1 = tf.square(pred_conf1 - label_conf)
     loss_obj2 = tf.square(pred_conf2 - label_conf)
     obj_loss = 1. * obj * vld * tf.where(resp_box, loss_obj1, loss_obj2)
+    '''
+
+    loss_obj1 = tf.square(pred_conf1 - 1) * obj_mask1
+    loss_obj2 = tf.square(pred_conf2 - 1) * obj_mask2
+    # obj_loss = 1. * obj * vld * (loss_obj1 + loss_obj2)
+    obj_loss = 1. * vld * (loss_obj1 + loss_obj2)
     obj_loss = tf.reduce_mean(tf.reduce_sum(obj_loss, axis=[2, 3]))
 
     ######################################    
 
+    '''
     loss_no_obj1 = tf.square(pred_conf1 - label_conf)
     loss_no_obj2 = tf.square(pred_conf2 - label_conf)
     no_obj_loss = 0.5 * no_obj * vld * tf.where(resp_box, loss_no_obj1, loss_no_obj2)
+    '''
+
+    loss_no_obj1 = tf.square(pred_conf1) * no_obj_mask1
+    loss_no_obj2 = tf.square(pred_conf2) * no_obj_mask2
+    # no_obj_loss = 0.5 * no_obj * vld * (loss_no_obj1 + loss_no_obj2)
+    no_obj_loss = 0.5 * vld * (loss_no_obj1 + loss_no_obj2)
     no_obj_loss = tf.reduce_mean(tf.reduce_sum(no_obj_loss, axis=[2, 3]))
 
     ######################################
@@ -158,7 +180,7 @@ def yolo_loss(pred, label, obj, no_obj, cat, vld):
     # print (yx_loss.numpy(), hw_loss.numpy(), obj_loss.numpy(), no_obj_loss.numpy(), cat_loss.numpy())
     
     loss = yx_loss + hw_loss + obj_loss + no_obj_loss + cat_loss
-    return loss
+    return loss, (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss)
 
 
 

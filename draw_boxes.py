@@ -36,8 +36,8 @@ offset_np = [
 
 def grid_to_pix(box):
     box[..., 0:2] = 48.  * box[..., 0:2] + offset_np
-    box[..., 2]   = np.square(box[..., 2] * np.sqrt(240.))
-    box[..., 3]   = np.square(box[..., 3] * np.sqrt(288.))
+    box[..., 2]   = np.square(box[..., 2]) * 240.
+    box[..., 3]   = np.square(box[..., 3]) * 288.
     return box
 
 ##############################################################
@@ -111,9 +111,9 @@ def draw_box(name, image, label, pred, nbox):
         
     for yc in range (5):
         for xc in range(6):
-            if conf1[yc][xc] > 1:
+            if conf1[yc][xc] > 0.25:
                 draw_box_help(pred_image, boxs1[yc][xc], None)
-            if conf2[yc][xc] > 1:
+            if conf2[yc][xc] > 0.25:
                 draw_box_help(pred_image, boxs2[yc][xc], None)
         
     concat = np.concatenate((true_image, pred_image), axis=1)

@@ -96,7 +96,13 @@ def parse_args():
 if __name__ == '__main__':
 
     records = []
-    for subdir, dirs, files in os.walk('./src_data'):
+    for subdir, dirs, files in os.walk('/home/bcrafton3/Data_SSD/prophesee-automotive-dataset/train_a/detection_dataset_duration_60s_ratio_1.0/train'):
+        for file in files:
+            filename, file_extension = os.path.splitext(file)
+            if file_extension == '.dat':
+                records.append(os.path.join(subdir, file))
+
+    for subdir, dirs, files in os.walk('/home/bcrafton3/Data_SSD/prophesee-automotive-dataset/train_b/detection_dataset_duration_60s_ratio_1.0/train'):
         for file in files:
             filename, file_extension = os.path.splitext(file)
             if file_extension == '.dat':

@@ -14,8 +14,8 @@ offset_np = np.array([
 ])
 
 def grid_to_pix(box):
-    box[..., 2] = np.square(box[..., 2] * np.sqrt(240.))
-    box[..., 3] = np.square(box[..., 3] * np.sqrt(288.))
+    box[..., 2] = np.square(box[..., 2]) * 240.
+    box[..., 3] = np.square(box[..., 3]) * 288.
     box[..., 0] = 48. * box[..., 0] + offset_np[..., 0] - 0.5 * box[..., 2]
     box[..., 1] = 48. * box[..., 1] + offset_np[..., 1] - 0.5 * box[..., 3]
     
@@ -40,7 +40,7 @@ def calc_map(truth, pred):
         
         box1  = grid_to_pix(pred[n][:, :, 0:4])
         conf1 = pred[n][:, :, 4]
-        obj1 = np.where(conf1 > 1)
+        obj1 = np.where(conf1 > 0.25)
         boxes1 = box1[obj1]
         conf1 = conf1[obj1]
         cat1 = cat[obj1]
@@ -52,7 +52,7 @@ def calc_map(truth, pred):
         
         box2  = grid_to_pix(pred[n][:, :, 5:9])
         conf2 = pred[n][:, :, 9]
-        obj2 = np.where(conf2 > 1)
+        obj2 = np.where(conf2 > 0.25)
         boxes2 = box2[obj2]
         conf2 = conf2[obj2]
         cat2 = cat[obj2]
