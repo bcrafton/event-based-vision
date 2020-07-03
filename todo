@@ -1,24 +1,8 @@
 ============
 
-> Loader which preloads the numpy files.
-> SQRT {H, W}
-> add train_b
-
-> is 'vld' redundant ?
-
-> 5x5, stride 3 is kinda sparse ... maybe go higher ? 
-> can we use pools instead of strides ? 
-> increase batch size for batch norm ?
-
-> run smaller training set ? 
-
-Best Yolo Loss Reference:
-> https://github.com/MingtaoGuo/yolo_v1_v2_tensorflow/blob/master/ops.py
-
-============
-
-> thinking something is wrong with our model.
-  > would like to try VGG11 or something.
+Top Wants:
+> mAP for the whole evaluation set.
+> Loader
 
 ============
 
@@ -55,13 +39,30 @@ will we have to dig into the scripts ?
 ============
 SORT OF DONE
 ============
+
 > XY WH confusion
 
 > Hyperparameter search = {results, run_results, get_results}
   > Learning rate schedule
+  
+> is 'vld' redundant ?
+  > not really.
   
 ============
 DONE
 ============
 > Better bounding box drawings.
 > we have 2 dense layers, the first has no activation !!!
+
+> thinking something is wrong with our model.
+  > would like to try VGG11 or something.
+  
+> 5x5, stride 3 is kinda sparse ... maybe go higher ? 
+> can we use pools instead of strides ? 
+> increase batch size for batch norm ?
+
+> SQRT {H, W}
+  
+> add train_b
+
+
