@@ -125,7 +125,7 @@ def det_tensor(dets, max_nd):
 if args.train:
     weights = None # weights = np.load('resnet18.npy', allow_pickle=True).item()
 else:
-    weights = np.load('small_resnet_yolo.npy', allow_pickle=True).item()
+    weights = np.load('models/small_resnet_yolo.npy', allow_pickle=True).item()
     
 ####################################
 
