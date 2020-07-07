@@ -194,7 +194,7 @@ def write(filename, text):
 
 ####################################
 
-N = 500
+N = 1459 # 1458.npy
 def run_train():
 
     for epoch in range(args.epochs):
@@ -209,6 +209,9 @@ def run_train():
         start = time.time()
 
         for n in range(N):
+            if (n % 100) == 0:
+                print (n)
+
             filename = './dataset/data/%d.npy' % (n)
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
