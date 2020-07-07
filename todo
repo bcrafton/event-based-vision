@@ -2,7 +2,14 @@
 
 Top Wants:
 > mAP for the whole evaluation set.
+  > there is def something wrong with calc_map i think.
+  
 > Loader
+  > image augmentation
+  
+> Overfitting
+  > transfer layers
+  > image augmentation
 
 ============
 

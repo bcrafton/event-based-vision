@@ -18,3 +18,24 @@ what about just a single box ?
 ------
 
 there is def something wrong with calc_map i think.
+
+------
+
+dataset_visualization literally loads every file in the list
+just make it not do that 
+and we shud be good
+
+------
+
+overfitting.
+
+> starting with actual DNN.
+  > not training it tranferred layers
+
+> image augmentation
+
+------
+
+
+
+
