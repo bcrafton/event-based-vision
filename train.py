@@ -125,7 +125,7 @@ def det_tensor(dets, max_nd):
 if args.train:
     weights = None # weights = np.load('resnet18.npy', allow_pickle=True).item()
 else:
-    weights = np.load('models/small_resnet_yolo.npy', allow_pickle=True).item()
+    weights = np.load('models/small_resnet_yolo_abcdef.npy', allow_pickle=True).item()
     
 ####################################
 
@@ -194,10 +194,15 @@ def write(filename, text):
 
 ####################################
 
-N = 1459 # 1458.npy
+if args.train: N = 1459 # 1458.npy
+else:          N = 250
+
+if args.train: epochs = args.epochs
+else:          epochs = 1
+
 def run_train():
 
-    for epoch in range(args.epochs):
+    for epoch in range(epochs):
         total_yx_loss = 0
         total_hw_loss = 0
         total_obj_loss = 0
@@ -212,7 +217,9 @@ def run_train():
             if (n % 100) == 0:
                 print (n)
 
-            filename = './dataset/data/%d.npy' % (n)
+            if args.train: filename = './dataset/train/%d.npy' % (n)
+            else:          filename = './dataset/val/%d.npy' % (n)
+
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']
 

@@ -17,7 +17,7 @@ import matplotlib.pyplot as plt
 from src.visualize import vis_utils as vis
 from src.io.psee_loader import PSEELoader
 
-def play_files_parallel(td_files, labels=None, delta_t=50000, skip=0):
+def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
     # open the video object for the input files
     # videos = [PSEELoader(td_file) for td_file in td_files]
@@ -64,10 +64,12 @@ def play_files_parallel(td_files, labels=None, delta_t=50000, skip=0):
 
         print (idx, np.shape(np.array(xs)))
         dataset = {'x': np.array(xs), 'y': dets}
-        np.save('./data/%d' % (idx), dataset)
+        np.save('%s/%d' % (path, idx), dataset)
 
 if __name__ == '__main__':
 
+    ###########################################################
+    '''
     records = []
     for subdir, dirs, files in os.walk('/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'):
         for file in files:
@@ -79,9 +81,24 @@ if __name__ == '__main__':
     for record in records:
         print (record)
 
-    play_files_parallel(records, skip=0, delta_t=20000)
-    
-    
+    play_files_parallel('./train', records, skip=0, delta_t=20000)
+    '''
+    ###########################################################
+
+    records = []
+    for subdir, dirs, files in os.walk('/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'):
+        for file in files:
+            filename, file_extension = os.path.splitext(file)
+            if file_extension == '.dat':
+                records.append(os.path.join(subdir, file))
+
+    records = sorted(records)
+    for record in records:
+        print (record)
+
+    play_files_parallel('./val', records, skip=0, delta_t=20000)
+
+    ###########################################################
     
     
     
