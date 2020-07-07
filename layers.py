@@ -49,7 +49,7 @@ class layer:
 #############
         
 class conv_block(layer):
-    def __init__(self, shape, p, weights=None, relu=True):
+    def __init__(self, shape, p, weights=None, train=True, relu=True):
         self.weight_id = layer.weight_id
         layer.weight_id += 1
         self.layer_id = layer.layer_id
@@ -59,6 +59,7 @@ class conv_block(layer):
         self.p = p
         self.pad = self.k // 2
         self.relu = relu
+        self.train_flag = train
 
         if weights:
             f, b, g = weights[self.weight_id]['f'], weights[self.weight_id]['b'], weights[self.weight_id]['g']
@@ -86,19 +87,22 @@ class conv_block(layer):
         return weights_dict
 
     def get_params(self):
-        return [self.f, self.b, self.g]
+        if self.train_flag:
+            return [self.f, self.b, self.g]
+        else:
+            return []
 
 #############
 
 class res_block1(layer):
-    def __init__(self, f1, f2, p, weights=None):
+    def __init__(self, f1, f2, p, weights=None, train=True):
         
         self.f1 = f1
         self.f2 = f2
         self.p = p
 
-        self.conv1 = conv_block((3, 3, f1, f2), p, weights=weights)
-        self.conv2 = conv_block((3, 3, f2, f2), 1, weights=weights, relu=False)
+        self.conv1 = conv_block((3, 3, f1, f2), p, weights=weights, train=train)
+        self.conv2 = conv_block((3, 3, f2, f2), 1, weights=weights, train=train, relu=False)
 
         self.layer_id = layer.layer_id
         layer.layer_id += 1
@@ -127,15 +131,15 @@ class res_block1(layer):
 #############
 
 class res_block2(layer):
-    def __init__(self, f1, f2, p, weights=None):
+    def __init__(self, f1, f2, p, weights=None, train=True):
 
         self.f1 = f1
         self.f2 = f2
         self.p = p
         
-        self.conv1 = conv_block((3, 3, f1, f2), p, weights=weights)
-        self.conv2 = conv_block((3, 3, f2, f2), 1, weights=weights, relu=False)
-        self.conv3 = conv_block((1, 1, f1, f2), p, weights=weights, relu=False)
+        self.conv1 = conv_block((3, 3, f1, f2), p, weights=weights, train=train)
+        self.conv2 = conv_block((3, 3, f2, f2), 1, weights=weights, train=train, relu=False)
+        self.conv3 = conv_block((1, 1, f1, f2), p, weights=weights, train=train, relu=False)
         
         self.layer_id = layer.layer_id
         layer.layer_id += 1
@@ -168,7 +172,7 @@ class res_block2(layer):
 #############
 
 class dense_block(layer):
-    def __init__(self, isize, osize, weights=None, relu=True):
+    def __init__(self, isize, osize, weights=None, train=True, relu=True):
         self.weight_id = layer.weight_id
         layer.weight_id += 1
         self.layer_id = layer.layer_id
@@ -177,6 +181,7 @@ class dense_block(layer):
         self.isize = isize
         self.osize = osize
         self.relu = relu
+        self.train_flag = train
 
         if weights:
             w, b = weights[self.weight_id]['w'], weights[self.weight_id]['b']
@@ -200,12 +205,15 @@ class dense_block(layer):
         return weights_dict
         
     def get_params(self):
-        return [self.w, self.b]
+        if self.train_flag:
+            return [self.w, self.b]
+        else:
+            return []
 
 #############
 
 class avg_pool(layer):
-    def __init__(self, s, p, weights=None):
+    def __init__(self, s, p):
         self.layer_id = layer.layer_id
         layer.layer_id += 1
     
@@ -226,7 +234,7 @@ class avg_pool(layer):
 #############
 
 class max_pool(layer):
-    def __init__(self, s, p, weights=None):
+    def __init__(self, s, p):
         self.layer_id = layer.layer_id
         layer.layer_id += 1
     
