@@ -69,9 +69,9 @@ def det_tensor(dets, max_nd):
         
         x = (x - xc * 48.) / 48. # might want to clip this to zero
         y = (y - yc * 48.) / 48. # might want to clip this to zero
-        w = w / 288.
-        h = h / 240.
-        
+        w = np.sqrt(w / 288.)
+        h = np.sqrt(h / 240.)
+
         x = np.clip(x, 0, 1)
         y = np.clip(y, 0, 1)
         w = np.clip(w, 0, 1)
@@ -94,8 +94,8 @@ def fill_queue(tid, nbatch, batch_size, nthread, samples, q):
         batch_x = []
         batch_y = []
         for i in range(batch_size):
-            example = batch * batch_size * i
-            print (example, len(samples))
+            example = batch * batch_size + i
+            # print (example, len(samples), nbatch * batch_size)
             assert (example < len(samples))
             sample = np.load(samples[example], allow_pickle=True).item()
             x, y = sample['x'], sample['y']

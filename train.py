@@ -40,85 +40,7 @@ tf.config.experimental.set_memory_growth(gpu, True)
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
 from calc_map import calc_map
-
-####################################
-
-'''
-x abscissa of the top left corner in pixels
-y ordinate of the top left corner in pixels
-w width of the boxes in pixel
-h height of the boxes in pixel
-ts timestamp of the box in the sequence in microseconds
-class_id 0 for cars and 1 for pedestrians
-'''
-
-# (49499999, 218., 84., 96., 91., 0, 1., 3758)
-# (49499999, 93., 84., 12., 43., 1, 1., 3759)
-
-'''
-ts timestamp of the box in the sequence in microseconds
-x abscissa of the top left corner in pixels
-y ordinate of the top left corner in pixels
-w width of the boxes in pixel
-h height of the boxes in pixel
-class_id 0 for cars and 1 for pedestrians
-obj (0,1)
-[3758, 3759] ???
-'''
-
-def create_labels(dets):
-    max_nd = 0
-    for b in range(len(dets)):
-        nd = len(dets[b])
-        max_nd = max(max_nd, nd)
-
-    coords = []; objs = []; no_objs = []; cats = []; vlds = []
-    for b in range(len(dets)):
-        coord, obj, no_obj, cat, vld = det_tensor(dets[b], max_nd)
-        coords.append(coord); objs.append(obj); no_objs.append(no_obj); cats.append(cat); vlds.append(vld)
-    
-    coords  = np.stack(coords, axis=0).astype(np.float32)
-    objs    = np.stack(objs, axis=0).astype(np.float32)
-    no_objs = np.stack(no_objs, axis=0).astype(np.float32)
-    cats    = np.stack(cats, axis=0).astype(np.float32)
-    vlds    = np.stack(vlds, axis=0).astype(np.float32)
-
-    return coords, objs, no_objs, cats, vlds
-
-def det_tensor(dets, max_nd):
-
-    coord   = np.zeros(shape=[max_nd, 5, 6, 5])
-    obj     = np.zeros(shape=[max_nd, 5, 6])
-    no_obj  = np.ones(shape=[max_nd, 5, 6])
-    cat     = np.zeros(shape=[max_nd, 5, 6])
-    vld     = np.zeros(shape=[max_nd, 5, 6])
-    
-    for idx in range(len(dets)):
-
-        _, x, y, w, h, c, _, _ = dets[idx]
-        x = np.clip(x + 0.5 * w, 0, 288)
-        y = np.clip(y + 0.5 * h, 0, 240)
-
-        xc = int(np.clip(x // 48, 0, 5))
-        yc = int(np.clip(y // 48, 0, 4))
-        
-        x = (x - xc * 48.) / 48. # might want to clip this to zero
-        y = (y - yc * 48.) / 48. # might want to clip this to zero
-        w = np.sqrt(w / 288.)
-        h = np.sqrt(h / 240.)
-
-        x = np.clip(x, 0, 1)
-        y = np.clip(y, 0, 1)
-        w = np.clip(w, 0, 1)
-        h = np.clip(h, 0, 1)
-        
-        coord [idx, yc, xc, :] = np.array([y, x, h, w, 1.])
-        obj   [idx, yc, xc] = 1.
-        no_obj[idx, yc, xc] = 0.
-        cat   [idx, yc, xc] = c
-        vld   [idx, :, :] = 1.
-        
-    return coord, obj, no_obj, cat, vld
+from load import Loader
 
 ####################################
 
@@ -202,6 +124,9 @@ else:          epochs = 1
 
 def run_train():
 
+    nbatch = 10
+    nthread = 4
+    
     for epoch in range(epochs):
         total_yx_loss = 0
         total_hw_loss = 0
@@ -213,47 +138,35 @@ def run_train():
         total = 0
         start = time.time()
 
-        for n in range(N):
-            if (n % 100) == 0:
-                print (n)
+        load = Loader('/home/brian/Desktop/event-based-vision/dataset/train', nbatch, args.batch_size, nthread)
+        for i in range(nbatch):
+            while load.empty(): pass 
+            x, coord, obj, no_obj, cat, vld = load.pop()
+    
+            out, loss, losses, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
+            optimizer.apply_gradients(zip(grad, params))
+            
+            if not args.train:
+                try:
+                    calc_map(ys[s:e], out.numpy())
+                except:
+                    pass
+            
+            (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
+            total_yx_loss     += yx_loss.numpy()
+            total_hw_loss     += hw_loss.numpy()
+            total_obj_loss    += obj_loss.numpy()
+            total_no_obj_loss += no_obj_loss.numpy()
+            total_cat_loss    += cat_loss.numpy()
 
-            if args.train: filename = './dataset/train/%d.npy' % (n)
-            else:          filename = './dataset/val/%d.npy' % (n)
+            total_loss += loss.numpy()
+            total += args.batch_size
+            
+            if (epoch % 5) == 0:
+                nd = np.count_nonzero(obj[0])
+                draw_box('./results/%d.jpg' % (i), np.sum(x[0, :, :, :], axis=2), coord[0], out.numpy()[0], nd)
 
-            load = np.load(filename, allow_pickle=True).item()
-            xs, ys = load['x'], load['y']
-
-            for batch in range(0, len(xs), args.batch_size):
-                s = batch
-                e = batch + args.batch_size
-                if e > len(xs): continue
-                
-                x = xs[s:e].astype(np.float32)
-                coord, obj, no_obj, cat, vld = create_labels(ys[s:e])
-                
-                out, loss, losses, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
-                optimizer.apply_gradients(zip(grad, params))
-                
-                if not args.train:
-                    try:
-                        calc_map(ys[s:e], out.numpy())
-                    except:
-                        pass
-                
-                (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
-                total_yx_loss     += yx_loss.numpy()
-                total_hw_loss     += hw_loss.numpy()
-                total_obj_loss    += obj_loss.numpy()
-                total_no_obj_loss += no_obj_loss.numpy()
-                total_cat_loss    += cat_loss.numpy()
-
-                total_loss += loss.numpy()
-                total += args.batch_size
-                
-                if (epoch % 5) == 0:
-                    nd = np.count_nonzero(obj[0])
-                    draw_box('./results/%d_%d.jpg' % (n, batch), np.sum(x[0, :, :, :], axis=2), coord[0], out.numpy()[0], nd)
-
+        load.join()
 
         yx_loss     = int(total_yx_loss     / total_loss * 100)
         hw_loss     = int(total_hw_loss     / total_loss * 100)

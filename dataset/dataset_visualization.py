@@ -19,12 +19,6 @@ from src.io.psee_loader import PSEELoader
 
 def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
-    # open the video object for the input files
-    # videos = [PSEELoader(td_file) for td_file in td_files]
-    
-    # use the naming pattern to find the corresponding box file
-    # box_videos = [PSEELoader(td_file.replace('_td.dat', '_bbox.npy')) for td_file in td_files]
-
     frame = np.zeros((240, 304, 3), dtype=np.uint8)
     
     for idx in range(len(td_files)):
@@ -32,10 +26,8 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
         video = PSEELoader(td_files[idx])
         box_video = PSEELoader(td_files[idx].replace('_td.dat', '_bbox.npy'))
         
-        xs = []
         frames = []
-        dets = []
-
+        frame_idx = 0
         while not video.done:
 
             events = video.load_delta_t(delta_t)
@@ -56,49 +48,58 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                     box[1] = round(box[1] * (288 / 304))
                     box[3] = round(box[3] * (288 / 304))
                 if np.shape(frames) == (240, 288, 12):
-                    xs.append(frames)
-                    dets.append(np.copy(boxes))
+                    # xs.append(frames)
+                    # dets.append(np.copy(boxes))
+                    sample = {'x': frames, 'y': boxes}
+                    np.save('%s/%d_%d' % (path, idx, frame_idx), sample)
                 frames = []
+                frame_idx += 1
 
-            vis.draw_bboxes(frame_preprocess, boxes)
+        # print (idx, np.shape(np.array(xs)))
+        # dataset = {'x': np.array(xs), 'y': dets}
+        # np.save('%s/%d' % (path, idx), dataset)
 
-        print (idx, np.shape(np.array(xs)))
-        dataset = {'x': np.array(xs), 'y': dets}
-        np.save('%s/%d' % (path, idx), dataset)
+###########################################################
+'''
+train_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
+val_path   = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
+'''
+###########################################################
 
-if __name__ == '__main__':
+train_path = './src_data/'
+val_path = ''
 
-    ###########################################################
-    '''
-    records = []
-    for subdir, dirs, files in os.walk('/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'):
-        for file in files:
-            filename, file_extension = os.path.splitext(file)
-            if file_extension == '.dat':
-                records.append(os.path.join(subdir, file))
+###########################################################
 
-    records = sorted(records)
-    for record in records:
-        print (record)
+records = []
+for subdir, dirs, files in os.walk(train_path):
+    for file in files:
+        filename, file_extension = os.path.splitext(file)
+        if file_extension == '.dat':
+            records.append(os.path.join(subdir, file))
 
-    play_files_parallel('./train', records, skip=0, delta_t=20000)
-    '''
-    ###########################################################
+records = sorted(records)
+for record in records:
+    print (record)
 
-    records = []
-    for subdir, dirs, files in os.walk('/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'):
-        for file in files:
-            filename, file_extension = os.path.splitext(file)
-            if file_extension == '.dat':
-                records.append(os.path.join(subdir, file))
+play_files_parallel('./train', records, skip=0, delta_t=20000)
 
-    records = sorted(records)
-    for record in records:
-        print (record)
+###########################################################
+'''
+records = []
+for subdir, dirs, files in os.walk(val_path):
+    for file in files:
+        filename, file_extension = os.path.splitext(file)
+        if file_extension == '.dat':
+            records.append(os.path.join(subdir, file))
 
-    play_files_parallel('./val', records, skip=0, delta_t=20000)
+records = sorted(records)
+for record in records:
+    print (record)
 
-    ###########################################################
+play_files_parallel('./val', records, skip=0, delta_t=20000)
+'''
+###########################################################
     
     
     
