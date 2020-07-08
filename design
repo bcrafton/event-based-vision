@@ -54,22 +54,54 @@ https://github.com/bcrafton/event-based-vision/commit/e01c12188f519fc38a4e714802
 
 ------
 
+WARNING:tensorflow:5 out of the last 11 calls to <function gradients at 0x7fef11ecf2f0> triggered tf.function retracing. Tracing is expensive and the excessive number of tracings is likely due to passing python objects instead of tensors. Also, tf.function has experimental_relax_shapes=True option that relaxes argument shapes that can avoid unnecessary retracing. Please refer to https://www.tensorflow.org/tutorials/customization/performance#python_or_tensor_args and https://www.tensorflow.org/api_docs/python/tf/function for more details.
 
+https://www.tensorflow.org/guide/function
+https://www.tensorflow.org/guide/function#python_or_tensor_args
 
+------
 
+> https://www.tensorflow.org/guide/data#consuming_tfrecord_data
+> https://www.tensorflow.org/guide/data#consuming_sets_of_files
 
+------
 
+so we really want to get that perf boost we know exists.
 
+------
 
+> tensor slicing ? 
+> .numpy ()
+> detection dimension ? 
+  > can we hard code this to 8 ? 
 
+------
+  
+so with inference, we are only getting ~120 FPS.
+that just aint right.
 
+this is a reduced ResNet.
 
+------
 
+this should be fine:
+https://www.tensorflow.org/guide/data#consuming_sets_of_files
 
+how will we batchify things tho ? 
+now we are using a fixed det size
+so that wont be too bad i guess
 
+yeah actually we can make this part work then.
 
+------
 
+so new problem i dealing with labels
+we have too many labels
+we will need to stack them somehow so we only get a single label
 
+or maybe it does allow for multiple returns and it will handle the stacking for u idk.
+
+------
 
 
 
