@@ -58,8 +58,8 @@ class conv_block(layer):
         self.k, _, self.f1, self.f2 = shape
         self.p = p
         self.pad = self.k // 2
-        self.relu = relu
-        self.train_flag = train
+        self.relu = tf.constant(relu)
+        self.train_flag = tf.constant(train)
 
         if weights:
             f, b, g = weights[self.weight_id]['f'], weights[self.weight_id]['b'], weights[self.weight_id]['g']
@@ -180,8 +180,8 @@ class dense_block(layer):
         
         self.isize = isize
         self.osize = osize
-        self.relu = relu
-        self.train_flag = train
+        self.relu = tf.constant(relu)
+        self.train_flag = tf.constant(train)
 
         if weights:
             w, b = weights[self.weight_id]['w'], weights[self.weight_id]['b']

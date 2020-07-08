@@ -5,8 +5,8 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=16)
-parser.add_argument('--lr', type=float, default=1e-5)
+parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -45,7 +45,8 @@ from load import Loader
 ####################################
 
 if args.train:
-    weights = None # weights = np.load('resnet18.npy', allow_pickle=True).item()
+    # weights = None # weights = np.load('resnet18.npy', allow_pickle=True).item()
+    weights = np.load('models/small_resnet_yolo_abcdef.npy', allow_pickle=True).item()
 else:
     weights = np.load('models/small_resnet_yolo_abcdef.npy', allow_pickle=True).item()
     
@@ -90,21 +91,27 @@ params = model.get_params()
 
 ####################################
 
-optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1.)
+if args.train: optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
+batch_size_tf = tf.constant(args.batch_size)
+
+@tf.function(experimental_relax_shapes=False)
 def gradients(model, x, coord, obj, no_obj, cat, vld):
     with tf.GradientTape() as tape:
         out = model.train(x)
         out = tf.reshape(out, (args.batch_size, 5, 6, 12))
-        '''
-        out = tf.concat((out[:, :, :, 0:4], tf.nn.sigmoid(out[:, :, :, 4:5]),
-                         out[:, :, :, 5:9], tf.nn.sigmoid(out[:, :, :, 9:10]),
-                         out[:, :, :, 10:12]), axis=3)
-        '''
-        loss, losses = yolo_loss(args.batch_size, out, coord, obj, no_obj, cat, vld)
+        loss, losses = yolo_loss(batch_size_tf, out, coord, obj, no_obj, cat, vld)
     
     grad = tape.gradient(loss, params)
     return out, loss, losses, grad
+
+####################################
+
+@tf.function(experimental_relax_shapes=False)
+def predict(model, x):
+    out = model.train(x)
+    out = tf.reshape(out, (args.batch_size, 5, 6, 12))
+    return out
 
 ####################################
 
@@ -115,17 +122,20 @@ def write(filename, text):
     f.close()
 
 ####################################
-
+'''
 if args.train: N = 1459 # 1458.npy
 else:          N = 250
+'''
 
 if args.train: epochs = args.epochs
 else:          epochs = 1
 
-def run_train():
+if args.train: nbatch = 4375 # @ batch_size = 16
+else:          nbatch = 790  # @ batch_size = 16
 
-    nbatch = 10
-    nthread = 4
+nthread = 4
+
+def run_train():
     
     for epoch in range(epochs):
         total_yx_loss = 0
@@ -138,33 +148,47 @@ def run_train():
         total = 0
         start = time.time()
 
-        load = Loader('/home/brian/Desktop/event-based-vision/dataset/train', nbatch, args.batch_size, nthread)
+        if args.train: load = Loader('/home/bcrafton3/Data_SSD/event-based-vision/dataset/train', nbatch, args.batch_size, nthread)
+        else:          load = Loader('/home/bcrafton3/Data_SSD/event-based-vision/dataset/val',   nbatch, args.batch_size, nthread)
+
         for i in range(nbatch):
             while load.empty(): pass 
             x, coord, obj, no_obj, cat, vld = load.pop()
     
-            out, loss, losses, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
-            optimizer.apply_gradients(zip(grad, params))
-            
+            if args.train:
+                out, loss, losses, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
+                optimizer.apply_gradients(zip(grad, params))
+            else:
+                out = predict(model, x)
+
             if not args.train:
                 try:
                     calc_map(ys[s:e], out.numpy())
                 except:
                     pass
-            
-            (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
-            total_yx_loss     += yx_loss.numpy()
-            total_hw_loss     += hw_loss.numpy()
-            total_obj_loss    += obj_loss.numpy()
-            total_no_obj_loss += no_obj_loss.numpy()
-            total_cat_loss    += cat_loss.numpy()
 
-            total_loss += loss.numpy()
+            if args.train:
+                (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
+                total_yx_loss     += yx_loss.numpy()
+                total_hw_loss     += hw_loss.numpy()
+                total_obj_loss    += obj_loss.numpy()
+                total_no_obj_loss += no_obj_loss.numpy()
+                total_cat_loss    += cat_loss.numpy()
+                total_loss += loss.numpy()
+
             total += args.batch_size
+
+            if ((i+1) % 100) == 0:
+                avg_loss = total_loss / (total / args.batch_size) # we reduce_mean over (batch,detection) (0,1)
+                avg_rate = total / (time.time() - start)
+                p = 'total: %d, qsize: %d, rate: %f, loss %f' % (total, load.q.qsize(), avg_rate, avg_loss)
+                print (p)
             
+            '''
             if (epoch % 5) == 0:
                 nd = np.count_nonzero(obj[0])
                 draw_box('./results/%d.jpg' % (i), np.sum(x[0, :, :, :], axis=2), coord[0], out.numpy()[0], nd)
+            '''
 
         load.join()
 

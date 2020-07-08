@@ -5,6 +5,7 @@ import cv2
 from PIL import Image
 import random
 from multiprocessing import Process, Queue
+import tensorflow as tf
 
 ####################################
 
@@ -32,10 +33,13 @@ obj (0,1)
 '''
 
 def create_labels(dets):
+    '''
     max_nd = 0
     for b in range(len(dets)):
         nd = len(dets[b])
         max_nd = max(max_nd, nd)
+    '''
+    max_nd = 8
 
     coords = []; objs = []; no_objs = []; cats = []; vlds = []
     for b in range(len(dets)):
@@ -45,8 +49,14 @@ def create_labels(dets):
     coords  = np.stack(coords, axis=0).astype(np.float32)
     objs    = np.stack(objs, axis=0).astype(np.float32)
     no_objs = np.stack(no_objs, axis=0).astype(np.float32)
-    cats    = np.stack(cats, axis=0).astype(np.float32)
+    cats    = np.stack(cats, axis=0).astype(np.int32)
     vlds    = np.stack(vlds, axis=0).astype(np.float32)
+
+    coords  = tf.convert_to_tensor(coords)
+    objs    = tf.convert_to_tensor(objs)
+    no_objs = tf.convert_to_tensor(no_objs)
+    cats    = tf.convert_to_tensor(cats)
+    vlds    = tf.convert_to_tensor(vlds)
 
     return coords, objs, no_objs, cats, vlds
 
@@ -58,7 +68,8 @@ def det_tensor(dets, max_nd):
     cat     = np.zeros(shape=[max_nd, 5, 6])
     vld     = np.zeros(shape=[max_nd, 5, 6])
     
-    for idx in range(len(dets)):
+    nd = min(max_nd, len(dets))
+    for idx in range(nd):
 
         _, x, y, w, h, c, _, _ = dets[idx]
         x = np.clip(x + 0.5 * w, 0, 288)
@@ -82,7 +93,7 @@ def det_tensor(dets, max_nd):
         no_obj[idx, yc, xc] = 0.
         cat   [idx, yc, xc] = c
         vld   [idx, :, :] = 1.
-        
+
     return coord, obj, no_obj, cat, vld
 
 ####################################
@@ -151,7 +162,8 @@ class Loader:
         return self.q.get()
 
     def empty(self):
-        return self.q.qsize() == 0
+        # return self.q.qsize() == 0
+        return self.q.empty()
 
     def full(self):
         return self.q.full()
