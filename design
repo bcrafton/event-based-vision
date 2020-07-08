@@ -36,6 +36,56 @@ overfitting.
 
 ------
 
+wrote a bunch of notes on loader changes:
+
+basically:
+dataset, load
+
+load diverged from dataset at ' update design notes '
+meaning only real changes are:
+https://github.com/bcrafton/event-based-vision/commits/load
+https://github.com/bcrafton/event-based-vision/commit/e01c12188f519fc38a4e7148023df97c8a7fdfed#diff-e44f4a60e89e820dde9bb27afa634965
+
+------
+
+> load.py
+> train.py
+> dataset_visualization.py
+
+------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
