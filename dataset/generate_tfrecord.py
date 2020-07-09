@@ -32,10 +32,11 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
     frame = np.zeros((240, 304, 3), dtype=np.uint8)
     
-    for idx in range(len(td_files)):
+    for video_idx in range(len(td_files)):
+        print (video_idx)
     
-        video = PSEELoader(td_files[idx])
-        box_video = PSEELoader(td_files[idx].replace('_td.dat', '_bbox.npy'))
+        video = PSEELoader(td_files[video_idx])
+        box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
         
         frames = []
         frame_idx = 0
@@ -68,9 +69,9 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
                 nbox, box_size = np.shape(boxes_np)
                 det_np = np.zeros(shape=(8, 5, 6, 8))
-                for idx in range(nbox):
+                for box_idx in range(nbox):
                 
-                    _, x, y, w, h, c, _, _ = boxes_np[idx]
+                    _, x, y, w, h, c, _, _ = boxes_np[box_idx]
                     x = np.clip(x + 0.5 * w, 0, 288)
                     y = np.clip(y + 0.5 * h, 0, 240)
                     
@@ -87,17 +88,17 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                     w = np.clip(w, 0, 1)
                     h = np.clip(h, 0, 1)
 
-                    det_np[idx, yc, xc, 0:4] = np.array([y, x, h, w])
-                    det_np[idx, yc, xc, 4] = 1.
-                    det_np[idx,  :,  :, 5] = 1.
-                    det_np[idx, yc, xc, 5] = 0.
-                    det_np[idx, yc, xc, 6] = c
-                    det_np[idx,  :,  :, 7] = 1.
+                    det_np[box_idx, yc, xc, 0:4] = np.array([y, x, h, w])
+                    det_np[box_idx, yc, xc, 4] = 1.
+                    det_np[box_idx,  :,  :, 5] = 1.
+                    det_np[box_idx, yc, xc, 5] = 0.
+                    det_np[box_idx, yc, xc, 6] = c
+                    det_np[box_idx,  :,  :, 7] = 1.
 
                 ###################################
 
                 if np.shape(frames) == (240, 288, 12):
-                    filename = '%s/%d_%d.tfrecord' % (path, idx, frame_idx)
+                    filename = '%s/%d_%d.tfrecord' % (path, video_idx, frame_idx)
 
                     with tf.io.TFRecordWriter(filename) as writer:
                         image_raw = frames.astype(np.float32).tostring()
