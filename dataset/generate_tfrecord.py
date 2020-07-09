@@ -68,6 +68,7 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                 ###################################
 
                 nbox, box_size = np.shape(boxes_np)
+                nbox = min(8, nbox)
                 det_np = np.zeros(shape=(8, 5, 6, 8))
                 for box_idx in range(nbox):
                 
@@ -116,15 +117,15 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
 
 ###########################################################
-'''
+
 train_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 val_path   = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
-'''
-###########################################################
 
+###########################################################
+'''
 train_path = './src_data/'
 val_path = ''
-
+'''
 ###########################################################
 
 records = []
@@ -141,7 +142,7 @@ for record in records:
 play_files_parallel('./train', records, skip=0, delta_t=20000)
 
 ###########################################################
-'''
+
 records = []
 for subdir, dirs, files in os.walk(val_path):
     for file in files:
@@ -154,7 +155,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-'''
+
 ###########################################################
     
     

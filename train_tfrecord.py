@@ -5,7 +5,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=8)
+parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
@@ -163,11 +163,12 @@ def collect_filenames(path):
 
 ####################################
 
-filenames = collect_filenames('/home/brian/Desktop/event-based-vision/dataset/train')
+filenames = collect_filenames('./dataset/train')
 dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.map(extract_fn)
-dataset = dataset.batch(8)
+dataset = dataset.batch(args.batch_size)
 dataset = dataset.repeat()
+dataset = dataset.prefetch(2)
 
 ####################################
 
