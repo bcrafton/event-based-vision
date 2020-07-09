@@ -40,7 +40,6 @@ tf.config.experimental.set_memory_growth(gpu, True)
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
 from calc_map import calc_map
-from load import Loader
 
 ####################################
 
@@ -122,10 +121,6 @@ def write(filename, text):
     f.close()
 
 ####################################
-'''
-if args.train: N = 1459 # 1458.npy
-else:          N = 250
-'''
 
 if args.train: epochs = args.epochs
 else:          epochs = 1
@@ -169,10 +164,10 @@ def collect_filenames(path):
 ####################################
 
 filenames = collect_filenames('/home/brian/Desktop/event-based-vision/dataset/train')
-val_dataset = tf.data.TFRecordDataset(filenames)
-val_dataset = val_dataset.map(extract_fn)
-val_dataset = val_dataset.batch(8)
-val_dataset = val_dataset.repeat()
+dataset = tf.data.TFRecordDataset(filenames)
+dataset = dataset.map(extract_fn)
+dataset = dataset.batch(8)
+dataset = dataset.repeat()
 
 ####################################
 
@@ -188,12 +183,19 @@ def run_train():
     total = 0
     start = time.time()
 
-    for (x, y) in val_dataset:
+    for (x, y) in dataset:
     
         out, loss, losses, grad = gradients(model, x, y)
         optimizer.apply_gradients(zip(grad, params))
 
+        (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
+        total_yx_loss     += yx_loss.numpy()
+        total_hw_loss     += hw_loss.numpy()
+        total_obj_loss    += obj_loss.numpy()
+        total_no_obj_loss += no_obj_loss.numpy()
+        total_cat_loss    += cat_loss.numpy()
         total_loss += loss.numpy()
+
         total += args.batch_size
 
         avg_loss = total_loss / (total / args.batch_size)
