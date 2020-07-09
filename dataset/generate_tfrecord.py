@@ -64,6 +64,13 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                     boxes_np.append(box_np)
                 boxes_np = np.array(boxes_np)
 
+                nbox, box_size = np.shape(boxes_np)
+                if nbox < 8:
+                    zeros = np.zeros(shape=(8 - nbox, box_size))
+                    boxes_np = np.concatenate((boxes_np, zeros), axis=0)
+                elif nbox > 8:
+                    boxes_np = boxes_np[0:8, :]
+
                 if np.shape(frames) == (240, 288, 12):
                     filename = '%s/%d_%d.tfrecord' % (path, idx, frame_idx)
 
