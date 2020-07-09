@@ -174,15 +174,30 @@ class Loader:
             self.threads[tid].join()
 
 ###################################################################
+'''
+def preprocess(filename):
+    data = np.load(filename, allow_pickle=True).item()
+    x, y = data['x'], data['y']
+    coord, obj, no_obj, cat, vld = det_tensor(y)
+    return x, coord, obj, no_obj, cat, vld
 
+def collect_filenames(path):
+    samples = []
+    for subdir, dirs, files in os.walk(path):
+        for file in files:
+            if file == 'placeholder':
+                continue
+            samples.append(os.path.join(subdir, file))
 
+    return samples
 
-
-
-
-
-
-
+def create_dataset(path):
+    filenames = collect_filenames(path)
+    dataset = tf.data.Dataset.list_files(filenames)
+    labeled_dataset = dataset.map(preprocess)
+    return labeled_dataset
+'''
+###################################################################
 
 
 

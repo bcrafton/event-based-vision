@@ -103,8 +103,12 @@ or maybe it does allow for multiple returns and it will handle the stacking for 
 
 ------
 
+alright, so just make the tfrecords work.
+hopefully allows us to go much faster.
 
+then try transforms and shit on the data.
 
+------
 
 
 

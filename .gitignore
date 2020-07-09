@@ -6,3 +6,4 @@ nohup.out
 *.pyc
 *.jpg
 *.dat
+*.tfrecord
