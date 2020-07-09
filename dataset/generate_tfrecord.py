@@ -64,19 +64,44 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                     boxes_np.append(box_np)
                 boxes_np = np.array(boxes_np)
 
+                ###################################
+
                 nbox, box_size = np.shape(boxes_np)
-                if nbox < 8:
-                    zeros = np.zeros(shape=(8 - nbox, box_size))
-                    boxes_np = np.concatenate((boxes_np, zeros), axis=0)
-                elif nbox > 8:
-                    boxes_np = boxes_np[0:8, :]
+                det_np = np.zeros(shape=(8, 5, 6, 8))
+                for idx in range(nbox):
+                
+                    _, x, y, w, h, c, _, _ = boxes_np[idx]
+                    x = np.clip(x + 0.5 * w, 0, 288)
+                    y = np.clip(y + 0.5 * h, 0, 240)
+                    
+                    xc = int(np.clip(x // 48, 0, 5))
+                    yc = int(np.clip(y // 48, 0, 4))
+
+                    x = (x - xc * 48.) / 48. # might want to clip this to zero
+                    y = (y - yc * 48.) / 48. # might want to clip this to zero
+                    w = np.sqrt(w / 288.)
+                    h = np.sqrt(h / 240.)
+
+                    x = np.clip(x, 0, 1)
+                    y = np.clip(y, 0, 1)
+                    w = np.clip(w, 0, 1)
+                    h = np.clip(h, 0, 1)
+
+                    det_np[idx, yc, xc, 0:4] = np.array([y, x, h, w])
+                    det_np[idx, yc, xc, 4] = 1.
+                    det_np[idx,  :,  :, 5] = 1.
+                    det_np[idx, yc, xc, 5] = 0.
+                    det_np[idx, yc, xc, 6] = c
+                    det_np[idx,  :,  :, 7] = 1.
+
+                ###################################
 
                 if np.shape(frames) == (240, 288, 12):
                     filename = '%s/%d_%d.tfrecord' % (path, idx, frame_idx)
 
                     with tf.io.TFRecordWriter(filename) as writer:
                         image_raw = frames.astype(np.float32).tostring()
-                        label_raw = boxes_np.astype(np.float32).tostring()
+                        label_raw = det_np.astype(np.float32).tostring()
                         _feature={
                                 'label_raw': _bytes_feature(label_raw),
                                 'image_raw': _bytes_feature(image_raw)
@@ -90,15 +115,15 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
 
 ###########################################################
-
+'''
 train_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 val_path   = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
-
-###########################################################
 '''
+###########################################################
+
 train_path = './src_data/'
 val_path = ''
-'''
+
 ###########################################################
 
 records = []
@@ -115,7 +140,7 @@ for record in records:
 play_files_parallel('./train', records, skip=0, delta_t=20000)
 
 ###########################################################
-
+'''
 records = []
 for subdir, dirs, files in os.walk(val_path):
     for file in files:
@@ -128,7 +153,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-
+'''
 ###########################################################
     
     

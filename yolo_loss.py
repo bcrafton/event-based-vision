@@ -64,7 +64,7 @@ def sign_no_grad(x):
     return tf.sign(x), grad
 
 @tf.function(experimental_relax_shapes=False)
-def yolo_loss(batch_size, pred, label, obj, no_obj, cat, vld):
+def yolo_loss(batch_size, pred, label):
 
     # pred   = [4,     7, 7, 90]
     # label  = [4, -1, 7, 7, 5]
@@ -73,6 +73,10 @@ def yolo_loss(batch_size, pred, label, obj, no_obj, cat, vld):
     # cat    = [4, -1, 7, 7]
 
     pred = tf.reshape(pred, [batch_size, 1, 5, 6, 12])
+    obj    = label[:, :, :, :, 4]
+    no_obj = label[:, :, :, :, 5]
+    cat    = tf.cast(label[:, :, :, :, 6], dtype=tf.int32)
+    vld    = label[:, :, :, :, 7]
 
     ######################################
 
