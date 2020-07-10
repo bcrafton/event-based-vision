@@ -90,7 +90,7 @@ params = model.get_params()
 
 ####################################
 
-if args.train: optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1.)
+optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
 batch_size_tf = tf.constant(args.batch_size)
 
@@ -122,16 +122,7 @@ def write(filename, text):
 
 ####################################
 
-if args.train: epochs = args.epochs
-else:          epochs = 1
-
-if args.train: nbatch = 4375 # @ batch_size = 16
-else:          nbatch = 790  # @ batch_size = 16
-
-nthread = 4
-
-####################################
-
+@tf.function(experimental_relax_shapes=False)
 def extract_fn(record):
     _feature={
         'label_raw': tf.io.FixedLenFeature([], tf.string),
@@ -143,7 +134,7 @@ def extract_fn(record):
     label = tf.cast(label, dtype=tf.float32)
     label = tf.reshape(label, (8, 5, 6, 8))
     
-    image = tf.io.decode_raw(sample['image_raw'], tf.float32)
+    image = tf.io.decode_raw(sample['image_raw'], tf.uint8)
     image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
     image = tf.reshape(image, (240, 288, 12))
     
@@ -165,43 +156,56 @@ def collect_filenames(path):
 
 filenames = collect_filenames('./dataset/train')
 dataset = tf.data.TFRecordDataset(filenames)
-dataset = dataset.map(extract_fn)
-dataset = dataset.batch(args.batch_size)
-dataset = dataset.repeat()
-dataset = dataset.prefetch(2)
+dataset = dataset.map(extract_fn, num_parallel_calls=6)
+dataset = dataset.batch(args.batch_size, drop_remainder=True)
+# dataset = dataset.repeat()
+dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
 ####################################
 
 def run_train():
     
-    total_yx_loss = 0
-    total_hw_loss = 0
-    total_obj_loss = 0
-    total_no_obj_loss = 0
-    total_cat_loss = 0
+    for epoch in range(5):
+        
+        total_yx_loss = 0
+        total_hw_loss = 0
+        total_obj_loss = 0
+        total_no_obj_loss = 0
+        total_cat_loss = 0
 
-    total_loss = 0        
-    total = 0
-    start = time.time()
+        total_loss = 0        
+        total = 0
+        batch = 0
+        start = time.time()
 
-    for (x, y) in dataset:
+        for (x, y) in dataset:
     
-        out, loss, losses, grad = gradients(model, x, y)
-        optimizer.apply_gradients(zip(grad, params))
+            out, loss, losses, grad = gradients(model, x, y)
+            optimizer.apply_gradients(zip(grad, params))
 
-        (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
-        total_yx_loss     += yx_loss.numpy()
-        total_hw_loss     += hw_loss.numpy()
-        total_obj_loss    += obj_loss.numpy()
-        total_no_obj_loss += no_obj_loss.numpy()
-        total_cat_loss    += cat_loss.numpy()
-        total_loss += loss.numpy()
+            (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
+            total_yx_loss     += yx_loss.numpy()
+            total_hw_loss     += hw_loss.numpy()
+            total_obj_loss    += obj_loss.numpy()
+            total_no_obj_loss += no_obj_loss.numpy()
+            total_cat_loss    += cat_loss.numpy()
+            total_loss += loss.numpy()
 
-        total += args.batch_size
+            total += args.batch_size
+            batch += 1
 
-        avg_loss = total_loss / (total / args.batch_size)
-        avg_rate = total / (time.time() - start)
-        print('total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
+            avg_loss = total_loss / (total / args.batch_size)
+            avg_rate = total / (time.time() - start)
+            print('total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
+
+            '''
+            if (batch % 100 == 0):
+                print ('sleep')
+                time.sleep(1)
+            '''
+
+            del(x)
+            del(y)
 
 ####################################
 

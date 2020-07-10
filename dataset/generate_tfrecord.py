@@ -102,7 +102,7 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                     filename = '%s/%d_%d.tfrecord' % (path, video_idx, frame_idx)
 
                     with tf.io.TFRecordWriter(filename) as writer:
-                        image_raw = frames.astype(np.float32).tostring()
+                        image_raw = frames.astype(np.uint8).tostring()
                         label_raw = det_np.astype(np.float32).tostring()
                         _feature={
                                 'label_raw': _bytes_feature(label_raw),
