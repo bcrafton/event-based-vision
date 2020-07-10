@@ -92,7 +92,7 @@ def calc_map(truth, pred):
 
         det_list.append(dets)
     
-    _coco_eval(det_list, truth_list, height=240, width=304)
+    _coco_eval(truth_list, det_list, height=240, width=304)
     
 ####################################
 
