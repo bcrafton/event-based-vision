@@ -23,6 +23,7 @@ import tensorflow as tf
 from layers import *
 import time
 import matplotlib.pyplot as plt
+import random
 
 ####################################
 
@@ -152,13 +153,16 @@ def collect_filenames(path):
                 continue
             samples.append(os.path.join(subdir, file))
 
+    random.shuffle(samples)
+
     return samples
 
 ####################################
 
 filenames = collect_filenames('./dataset/train')
 dataset = tf.data.TFRecordDataset(filenames)
-dataset = dataset.map(extract_fn, num_parallel_calls=6)
+# dataset = dataset.shuffle(buffer_size=100000, reshuffle_each_iteration=False)
+dataset = dataset.map(extract_fn, num_parallel_calls=4)
 dataset = dataset.batch(args.batch_size, drop_remainder=True)
 # dataset = dataset.repeat()
 dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
@@ -202,7 +206,7 @@ for epoch in range(args.epochs):
             cat_loss    = int(total_cat_loss    / total_loss * 100)
             avg_loss = total_loss / total
             avg_rate = (total * args.batch_size) / (time.time() - start)
-            write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
+            write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total * args.batch_size, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
 
     trained_weights = model.get_weights()
     np.save(name + '_weights', trained_weights)
