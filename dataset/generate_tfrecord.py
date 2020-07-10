@@ -117,15 +117,15 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
 
 ###########################################################
-
+'''
 train_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 val_path   = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
-
-###########################################################
 '''
+###########################################################
+
 train_path = './src_data/'
 val_path = ''
-'''
+
 ###########################################################
 
 records = []

@@ -122,9 +122,13 @@ def extract_fn(record):
   > random crop --- 224,224
   > resize to larger image, then crop.
 
+------
 
+> OH shit - dont forget window size is changed. they use width=304.
 
+> we should be saving the original label inside of the tfrecord ... so we dont have to recreate it like this ...
 
+------
 
 
 

@@ -1,7 +1,7 @@
 
 import numpy as np
 import tensorflow as tf
-from dataset.src.metrics.coco_eval import evaluate_detection
+from dataset.src.metrics.coco_eval import _coco_eval
 
 ####################################
 
@@ -29,13 +29,41 @@ def grid_to_pix(box):
 ####################################
 
 def calc_map(truth, pred):
-    truth = truth[0:len(pred)]
-    assert (len(truth) == len(pred))
     
+    # nb, nd, ny, nx, nbox = np.shape(truth)
+    # print (np.shape(truth)) # (16, 8, 5, 6, 8)
+    # print (np.shape(pred))  # (16, 5, 6, 12)
+    assert (len(truth) == len(pred))
     N = len(truth)
-    dets = []
+    
+    truth_list = []
     for n in range(N):
-        t = truth[n][0][0]
+        dets = []
+    
+        # see generate_tfrecord.py
+        boxes   = grid_to_pix(truth[n, :, :, :, 0:4])
+        objs    = truth[n, :, :, :, 4]
+        no_objs = truth[n, :, :, :, 5]
+        cats    = truth[n, :, :, :, 6]
+        vld     = truth[n, :, :, :, 7]
+        # print (truth[n, :, :, :, 4])
+        # print (truth[n, :, :, :, 7])
+        
+        obj = np.where(truth[n, :, :, :, 4] == 1)
+        box = boxes[obj]
+        cat = cats[obj]
+        
+        ndet = len(box)
+        for d in range(ndet):
+            det = (0,) + tuple(box[d]) + (cat[d],) + (1,) + (0,)
+            dets.append(det)
+            
+        truth_list.append(dets)
+        
+    det_list = []
+    for n in range(N):
+        dets = []
+        
         cat = np.argmax(pred[n][:, :, 10:12], axis=-1)
         
         box1  = grid_to_pix(pred[n][:, :, 0:4])
@@ -47,7 +75,7 @@ def calc_map(truth, pred):
         
         ndet = len(conf1)
         for d in range(ndet):
-            det = (t,) + tuple(boxes1[d]) + (cat1[d],) + (conf1[d],) + (0,)
+            det = (0,) + tuple(boxes1[d]) + (cat1[d],) + (conf1[d],) + (0,)
             dets.append(det)
         
         box2  = grid_to_pix(pred[n][:, :, 5:9])
@@ -59,27 +87,29 @@ def calc_map(truth, pred):
 
         ndet = len(conf2)
         for d in range(ndet):
-            det = (t,) + tuple(boxes2[d]) + (cat2[d],) + (conf2[d],) + (0,)
+            det = (0,) + tuple(boxes2[d]) + (cat2[d],) + (conf2[d],) + (0,)
             dets.append(det)
-        
-    flat_truth = []
-    for n in range(N):
-        D = len(truth[n])
-        for d in range(D):
-            flat_truth.append(truth[n][d])
+
+        det_list.append(dets)
     
-    header = [
-    ('ts',         '<i8'), 
-    ('x',          '<f4'),
-    ('y',          '<f4'),
-    ('w',          '<f4'),
-    ('h',          '<f4'),
-    ('class_id',   '<i8'),
-    ('confidence', '<f4'),
-    ('track_id',   '<i8')]
-    
-    dets = np.array(dets, dtype=header)
-    flat_truth = np.array(flat_truth, dtype=header)
-    evaluate_detection([dets], [flat_truth])
+    _coco_eval(det_list, truth_list, height=240, width=304)
     
 ####################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

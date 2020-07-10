@@ -159,7 +159,9 @@ def collect_filenames(path):
 
 ####################################
 
-filenames = collect_filenames('./dataset/train')
+if   args.train: filenames = collect_filenames('./dataset/train')
+else:            filenames = collect_filenames('./dataset/val')
+
 dataset = tf.data.TFRecordDataset(filenames)
 # dataset = dataset.shuffle(buffer_size=100000, reshuffle_each_iteration=False)
 dataset = dataset.map(extract_fn, num_parallel_calls=4)
@@ -181,6 +183,8 @@ for epoch in range(args.epochs):
     total = 0
     start = time.time()
 
+    ys = []
+    preds = []
     for (x, y) in dataset:
 
         out, loss, losses, grad = gradients(model, x, y)
@@ -195,6 +199,10 @@ for epoch in range(args.epochs):
         total_loss        += loss.numpy()
         total += 1
 
+        if not args.train:
+            ys.append(y.numpy())
+            preds.append(out.numpy())
+
         del(x)
         del(y)
 
@@ -207,6 +215,11 @@ for epoch in range(args.epochs):
             avg_loss = total_loss / total
             avg_rate = (total * args.batch_size) / (time.time() - start)
             write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total * args.batch_size, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
+
+    if not args.train:
+        ys = np.concatenate(ys, axis=0)
+        preds = np.concatenate(preds, axis=0)
+        calc_map(ys, preds)
 
     trained_weights = model.get_weights()
     np.save(name + '_weights', trained_weights)
