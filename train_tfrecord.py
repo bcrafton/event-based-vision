@@ -1,5 +1,6 @@
 
 
+
 import argparse
 import os
 import sys
@@ -164,52 +165,47 @@ dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
 ####################################
 
-def run_train():
+for epoch in range(args.epochs):
 
-    for epoch in range(5):
+    total_yx_loss = 0
+    total_hw_loss = 0
+    total_obj_loss = 0
+    total_no_obj_loss = 0
+    total_cat_loss = 0
 
-        total_yx_loss = 0
-        total_hw_loss = 0
-        total_obj_loss = 0
-        total_no_obj_loss = 0
-        total_cat_loss = 0
+    total_loss = 0
+    total = 0
+    start = time.time()
 
-        total_loss = 0
-        total = 0
-        start = time.time()
+    for (x, y) in dataset:
 
-        for (x, y) in dataset:
+        out, loss, losses, grad = gradients(model, x, y)
+        optimizer.apply_gradients(zip(grad, params))
 
-            out, loss, losses, grad = gradients(model, x, y)
-            optimizer.apply_gradients(zip(grad, params))
+        (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
+        total_yx_loss     += yx_loss.numpy()
+        total_hw_loss     += hw_loss.numpy()
+        total_obj_loss    += obj_loss.numpy()
+        total_no_obj_loss += no_obj_loss.numpy()
+        total_cat_loss    += cat_loss.numpy()
+        total_loss        += loss.numpy()
+        total += 1
 
-            (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
-            total_yx_loss     += yx_loss.numpy()
-            total_hw_loss     += hw_loss.numpy()
-            total_obj_loss    += obj_loss.numpy()
-            total_no_obj_loss += no_obj_loss.numpy()
-            total_cat_loss    += cat_loss.numpy()
-            total_loss        += loss.numpy()
-            total += 1
+        del(x)
+        del(y)
 
-            del(x)
-            del(y)
+        if (total % 100 == 0):
+            yx_loss     = int(total_yx_loss     / total_loss * 100)
+            hw_loss     = int(total_hw_loss     / total_loss * 100)
+            obj_loss    = int(total_obj_loss    / total_loss * 100)
+            no_obj_loss = int(total_no_obj_loss / total_loss * 100)
+            cat_loss    = int(total_cat_loss    / total_loss * 100)
+            avg_loss = total_loss / total
+            avg_rate = (total * args.batch_size) / (time.time() - start)
+            write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
 
-            if (total % 100 == 0):
-                yx_loss     = int(total_yx_loss     / total_loss * 100)
-                hw_loss     = int(total_hw_loss     / total_loss * 100)
-                obj_loss    = int(total_obj_loss    / total_loss * 100)
-                no_obj_loss = int(total_no_obj_loss / total_loss * 100)
-                cat_loss    = int(total_cat_loss    / total_loss * 100)
-                avg_loss = total_loss / total
-                avg_rate = (total * args.batch_size) / (time.time() - start)
-                write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
-
-
-
-####################################
-
-run_train()
+    trained_weights = model.get_weights()
+    np.save(name + '_weights', trained_weights)
 
 ####################################
 
