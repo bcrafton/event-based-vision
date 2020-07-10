@@ -110,12 +110,17 @@ then try transforms and shit on the data.
 
 ------
 
+>>> holy shit it was just making this tf.function
 
+@tf.function(experimental_relax_shapes=False)
+def extract_fn(record):
 
+------
 
-
-
-
+> put the old stuff back in.
+> image transforms to make generalization work.
+  > random crop --- 224,224
+  > resize to larger image, then crop.
 
 
 
