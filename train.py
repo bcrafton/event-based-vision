@@ -232,11 +232,7 @@ def run_train():
                 out, loss, losses, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
                 optimizer.apply_gradients(zip(grad, params))
                 
-                if not args.train:
-                    try:
-                        calc_map(ys[s:e], out.numpy())
-                    except:
-                        pass
+                calc_map(ys[s:e], out.numpy())
                 
                 (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
                 total_yx_loss     += yx_loss.numpy()

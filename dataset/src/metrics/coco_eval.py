@@ -27,8 +27,25 @@ def evaluate_detection(gt_boxes_list, dt_boxes_list, classes=("car", "pedestrian
     :param width: int for box size statistics
     :param time_tol: int size of the temporal window in micro seconds to look for a detection around a gt box
     """
+    
+    # so we dont actually want to flatten our array.
+    # we want it to be [nb, nd, 8-tuple]
+    '''
     flattened_gt = []
     flattened_dt = []
+    
+    print (dt_boxes_list)
+    
+    for dt_boxes in dt_boxes_list:
+        print (dt_boxes)
+        flattened_dt = flattened_dt + dt_boxes
+    
+    for gt_boxes in gt_boxes_list:
+        print (gt_boxes)
+        flattened_gt = flattened_gt + gt_boxes
+    '''
+    
+    '''
     for gt_boxes, dt_boxes in zip(gt_boxes_list, dt_boxes_list):
 
         assert np.all(gt_boxes['ts'][1:] >= gt_boxes['ts'][:-1])
@@ -40,10 +57,33 @@ def evaluate_detection(gt_boxes_list, dt_boxes_list, classes=("car", "pedestrian
         gt_win, dt_win = _match_times(all_ts, gt_boxes, dt_boxes, time_tol)
         flattened_gt = flattened_gt + gt_win
         flattened_dt = flattened_dt + dt_win
+    '''
+    
+    '''
+    print ()
+    print (len(gt_boxes_list))
+    
+    print ()
+    for gt in gt_boxes_list:
+        for box in gt:
+            print (box)
+    
+    print ()
+    print (len(flattened_gt))
+    
+    print ()
+    for gt in flattened_gt:
+        for box in gt:
+            print (box)
+    
+    assert (False)
 
     _coco_eval(flattened_gt, flattened_dt, height, width, labelmap=classes)
+    '''
+    _coco_eval(gt_boxes_list, dt_boxes_list, height, width, labelmap=classes)
 
 
+'''
 def _match_times(all_ts, gt_boxes, dt_boxes, time_tol):
     """
     match ground truth boxes and ground truth detections at all timestamps using a specified tolerance
@@ -80,7 +120,7 @@ def _match_times(all_ts, gt_boxes, dt_boxes, time_tol):
         windowed_dt.append(dt_boxes[low_dt:high_dt])
 
     return windowed_gt, windowed_dt
-
+'''
 
 def _coco_eval(gts, detections, height, width, labelmap=("car", "pedestrian")):
     """simple helper function wrapping around COCO's Python API
@@ -90,6 +130,11 @@ def _coco_eval(gts, detections, height, width, labelmap=("car", "pedestrian")):
     :params:  width int
     :params:  labelmap iterable of class labels
     """
+    # print (gts)
+    # print (len(gts)) # 16
+    # print (len(gts[0])) # 1, 1, 3, 2, ...
+    # print (gts[0][0]) # (33099999, 0., 150., 34., 21., 0, 0.6735892, 0)
+    
     categories = [{"id": id + 1, "name": class_name, "supercategory": "none"}
                   for id, class_name in enumerate(labelmap)]
 
@@ -129,8 +174,8 @@ def _to_coco_format(gts, detections, categories, height=240, width=304):
              "width": width})
 
         for bbox in gt:
-            x1, y1 = bbox['x'], bbox['y']
-            w, h = bbox['w'], bbox['h']
+            x1, y1 = bbox[1], bbox[2]
+            w, h = bbox[3], bbox[4]
             area = w * h
 
             annotation = {
@@ -138,7 +183,7 @@ def _to_coco_format(gts, detections, categories, height=240, width=304):
                 "iscrowd": False,
                 "image_id": im_id,
                 "bbox": [x1, y1, w, h],
-                "category_id": int(bbox['class_id']) + 1,
+                "category_id": int(bbox[5]) + 1,
                 "id": len(annotations) + 1
             }
             annotations.append(annotation)
@@ -147,9 +192,9 @@ def _to_coco_format(gts, detections, categories, height=240, width=304):
 
             image_result = {
                 'image_id': im_id,
-                'category_id': int(bbox['class_id']) + 1,
-                'score': float(bbox['confidence']),
-                'bbox': [bbox['x'], bbox['y'], bbox['w'], bbox['h']],
+                'category_id': int(bbox[5]) + 1,
+                'score': float(bbox[6]),
+                'bbox': [bbox[1], bbox[2], bbox[3], bbox[4]],
             }
             results.append(image_result)
 
@@ -159,4 +204,9 @@ def _to_coco_format(gts, detections, categories, height=240, width=304):
                "images": images,
                "annotations": annotations,
                "categories": categories}
+               
     return dataset, results
+    
+    
+    
+    

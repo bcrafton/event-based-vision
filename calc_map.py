@@ -33,9 +33,11 @@ def calc_map(truth, pred):
     assert (len(truth) == len(pred))
     
     N = len(truth)
-    dets = []
+    det_list = []
     for n in range(N):
-        t = truth[n][0][0]
+        dets = []
+        
+        # t = truth[n][0][0]
         cat = np.argmax(pred[n][:, :, 10:12], axis=-1)
         
         box1  = grid_to_pix(pred[n][:, :, 0:4])
@@ -47,7 +49,7 @@ def calc_map(truth, pred):
         
         ndet = len(conf1)
         for d in range(ndet):
-            det = (t,) + tuple(boxes1[d]) + (cat1[d],) + (conf1[d],) + (0,)
+            det = (0,) + tuple(boxes1[d]) + (cat1[d],) + (conf1[d],) + (0,)
             dets.append(det)
         
         box2  = grid_to_pix(pred[n][:, :, 5:9])
@@ -59,9 +61,12 @@ def calc_map(truth, pred):
 
         ndet = len(conf2)
         for d in range(ndet):
-            det = (t,) + tuple(boxes2[d]) + (cat2[d],) + (conf2[d],) + (0,)
+            det = (0,) + tuple(boxes2[d]) + (cat2[d],) + (conf2[d],) + (0,)
             dets.append(det)
         
+        det_list.append(dets)
+        
+    '''
     flat_truth = []
     for n in range(N):
         D = len(truth[n])
@@ -81,5 +86,40 @@ def calc_map(truth, pred):
     dets = np.array(dets, dtype=header)
     flat_truth = np.array(flat_truth, dtype=header)
     evaluate_detection([dets], [flat_truth])
+    '''
+    
+    '''
+    print (len(det_list))
+    print (len(det_list[0]))
+    print (len(det_list[1]))
+    print (len(det_list[2]))
+    
+    print (len(truth))
+    print (len(truth[0]))
+    print (len(truth[1]))
+    print (len(truth[2]))
+    
+    assert (False)
+    '''
+    
+    evaluate_detection(det_list, truth)
     
 ####################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
