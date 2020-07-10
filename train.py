@@ -1,4 +1,6 @@
 
+
+
 import argparse
 import os
 import sys
@@ -40,7 +42,6 @@ tf.config.experimental.set_memory_growth(gpu, True)
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
 from calc_map import calc_map
-from load import Loader
 
 ####################################
 
@@ -49,7 +50,7 @@ if args.train:
     weights = np.load('models/small_resnet_yolo_abcdef.npy', allow_pickle=True).item()
 else:
     weights = np.load('models/small_resnet_yolo_abcdef.npy', allow_pickle=True).item()
-    
+
 ####################################
 
 # 240, 288
@@ -91,17 +92,17 @@ params = model.get_params()
 
 ####################################
 
-if args.train: optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1.)
+optimizer = tf.keras.optimizers.Adam(learning_rate=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1.)
 
 batch_size_tf = tf.constant(args.batch_size)
 
 @tf.function(experimental_relax_shapes=False)
-def gradients(model, x, coord, obj, no_obj, cat, vld):
+def gradients(model, x, y):
     with tf.GradientTape() as tape:
         out = model.train(x)
         out = tf.reshape(out, (args.batch_size, 5, 6, 12))
-        loss, losses = yolo_loss(batch_size_tf, out, coord, obj, no_obj, cat, vld)
-    
+        loss, losses = yolo_loss(batch_size_tf, out, y)
+
     grad = tape.gradient(loss, params)
     return out, loss, losses, grad
 
@@ -122,94 +123,89 @@ def write(filename, text):
     f.close()
 
 ####################################
-'''
-if args.train: N = 1459 # 1458.npy
-else:          N = 250
-'''
 
-if args.train: epochs = args.epochs
-else:          epochs = 1
+@tf.function(experimental_relax_shapes=False)
+def extract_fn(record):
+    _feature={
+        'label_raw': tf.io.FixedLenFeature([], tf.string),
+        'image_raw': tf.io.FixedLenFeature([], tf.string)
+    }
+    sample = tf.io.parse_single_example(record, _feature)
 
-if args.train: nbatch = 4375 # @ batch_size = 16
-else:          nbatch = 790  # @ batch_size = 16
+    label = tf.io.decode_raw(sample['label_raw'], tf.float32)
+    label = tf.cast(label, dtype=tf.float32)
+    label = tf.reshape(label, (8, 5, 6, 8))
 
-nthread = 4
+    image = tf.io.decode_raw(sample['image_raw'], tf.uint8)
+    image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
+    image = tf.reshape(image, (240, 288, 12))
 
-def run_train():
-    
-    for epoch in range(epochs):
-        total_yx_loss = 0
-        total_hw_loss = 0
-        total_obj_loss = 0
-        total_no_obj_loss = 0
-        total_cat_loss = 0
-
-        total_loss = 0        
-        total = 0
-        start = time.time()
-
-        if args.train: load = Loader('/home/bcrafton3/Data_SSD/event-based-vision/dataset/train', nbatch, args.batch_size, nthread)
-        else:          load = Loader('/home/bcrafton3/Data_SSD/event-based-vision/dataset/val',   nbatch, args.batch_size, nthread)
-
-        for i in range(nbatch):
-            while load.empty(): pass 
-            x, coord, obj, no_obj, cat, vld = load.pop()
-    
-            if args.train:
-                out, loss, losses, grad = gradients(model, x, coord, obj, no_obj, cat, vld)
-                optimizer.apply_gradients(zip(grad, params))
-            else:
-                out = predict(model, x)
-
-            if not args.train:
-                try:
-                    calc_map(ys[s:e], out.numpy())
-                except:
-                    pass
-
-            if args.train:
-                (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
-                total_yx_loss     += yx_loss.numpy()
-                total_hw_loss     += hw_loss.numpy()
-                total_obj_loss    += obj_loss.numpy()
-                total_no_obj_loss += no_obj_loss.numpy()
-                total_cat_loss    += cat_loss.numpy()
-                total_loss += loss.numpy()
-
-            total += args.batch_size
-
-            if ((i+1) % 100) == 0:
-                avg_loss = total_loss / (total / args.batch_size) # we reduce_mean over (batch,detection) (0,1)
-                avg_rate = total / (time.time() - start)
-                p = 'total: %d, qsize: %d, rate: %f, loss %f' % (total, load.q.qsize(), avg_rate, avg_loss)
-                print (p)
-            
-            '''
-            if (epoch % 5) == 0:
-                nd = np.count_nonzero(obj[0])
-                draw_box('./results/%d.jpg' % (i), np.sum(x[0, :, :, :], axis=2), coord[0], out.numpy()[0], nd)
-            '''
-
-        load.join()
-
-        yx_loss     = int(total_yx_loss     / total_loss * 100)
-        hw_loss     = int(total_hw_loss     / total_loss * 100)
-        obj_loss    = int(total_obj_loss    / total_loss * 100)
-        no_obj_loss = int(total_no_obj_loss / total_loss * 100)
-        cat_loss    = int(total_cat_loss    / total_loss * 100)
-
-        # avg_loss = total_loss / total
-        avg_loss = total_loss / (total / args.batch_size) # we reduce_mean over (batch,detection) (0,1)
-        avg_rate = total / (time.time() - start)
-        # print (avg_rate, avg_loss)
-        write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
-
-        trained_weights = model.get_weights()
-        np.save(name + '_weights', trained_weights)
+    return [image, label]
 
 ####################################
 
-run_train()
+def collect_filenames(path):
+    samples = []
+    for subdir, dirs, files in os.walk(path):
+        for file in files:
+            if file == 'placeholder':
+                continue
+            samples.append(os.path.join(subdir, file))
+
+    return samples
+
+####################################
+
+filenames = collect_filenames('./dataset/train')
+dataset = tf.data.TFRecordDataset(filenames)
+dataset = dataset.map(extract_fn, num_parallel_calls=6)
+dataset = dataset.batch(args.batch_size, drop_remainder=True)
+# dataset = dataset.repeat()
+dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
+
+####################################
+
+for epoch in range(args.epochs):
+
+    total_yx_loss = 0
+    total_hw_loss = 0
+    total_obj_loss = 0
+    total_no_obj_loss = 0
+    total_cat_loss = 0
+
+    total_loss = 0
+    total = 0
+    start = time.time()
+
+    for (x, y) in dataset:
+
+        out, loss, losses, grad = gradients(model, x, y)
+        optimizer.apply_gradients(zip(grad, params))
+
+        (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
+        total_yx_loss     += yx_loss.numpy()
+        total_hw_loss     += hw_loss.numpy()
+        total_obj_loss    += obj_loss.numpy()
+        total_no_obj_loss += no_obj_loss.numpy()
+        total_cat_loss    += cat_loss.numpy()
+        total_loss        += loss.numpy()
+        total += 1
+
+        del(x)
+        del(y)
+
+        if (total % 100 == 0):
+            yx_loss     = int(total_yx_loss     / total_loss * 100)
+            hw_loss     = int(total_hw_loss     / total_loss * 100)
+            obj_loss    = int(total_obj_loss    / total_loss * 100)
+            no_obj_loss = int(total_no_obj_loss / total_loss * 100)
+            cat_loss    = int(total_cat_loss    / total_loss * 100)
+            avg_loss = total_loss / total
+            avg_rate = (total * args.batch_size) / (time.time() - start)
+            write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
+
+    trained_weights = model.get_weights()
+    np.save(name + '_weights', trained_weights)
 
 ####################################
 
