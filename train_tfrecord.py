@@ -1,4 +1,5 @@
 
+
 import argparse
 import os
 import sys
@@ -48,7 +49,7 @@ if args.train:
     weights = np.load('models/small_resnet_yolo_abcdef.npy', allow_pickle=True).item()
 else:
     weights = np.load('models/small_resnet_yolo_abcdef.npy', allow_pickle=True).item()
-    
+
 ####################################
 
 # 240, 288
@@ -100,7 +101,7 @@ def gradients(model, x, y):
         out = model.train(x)
         out = tf.reshape(out, (args.batch_size, 5, 6, 12))
         loss, losses = yolo_loss(batch_size_tf, out, y)
-    
+
     grad = tape.gradient(loss, params)
     return out, loss, losses, grad
 
@@ -133,11 +134,11 @@ def extract_fn(record):
     label = tf.io.decode_raw(sample['label_raw'], tf.float32)
     label = tf.cast(label, dtype=tf.float32)
     label = tf.reshape(label, (8, 5, 6, 8))
-    
+
     image = tf.io.decode_raw(sample['image_raw'], tf.uint8)
     image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
     image = tf.reshape(image, (240, 288, 12))
-    
+
     return [image, label]
 
 ####################################
@@ -164,22 +165,21 @@ dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 ####################################
 
 def run_train():
-    
+
     for epoch in range(5):
-        
+
         total_yx_loss = 0
         total_hw_loss = 0
         total_obj_loss = 0
         total_no_obj_loss = 0
         total_cat_loss = 0
 
-        total_loss = 0        
+        total_loss = 0
         total = 0
-        batch = 0
         start = time.time()
 
         for (x, y) in dataset:
-    
+
             out, loss, losses, grad = gradients(model, x, y)
             optimizer.apply_gradients(zip(grad, params))
 
@@ -189,23 +189,23 @@ def run_train():
             total_obj_loss    += obj_loss.numpy()
             total_no_obj_loss += no_obj_loss.numpy()
             total_cat_loss    += cat_loss.numpy()
-            total_loss += loss.numpy()
-
-            total += args.batch_size
-            batch += 1
-
-            avg_loss = total_loss / (total / args.batch_size)
-            avg_rate = total / (time.time() - start)
-            print('total: %d, rate: %f, loss %f' % (total, avg_rate, avg_loss))
-
-            '''
-            if (batch % 100 == 0):
-                print ('sleep')
-                time.sleep(1)
-            '''
+            total_loss        += loss.numpy()
+            total += 1
 
             del(x)
             del(y)
+
+            if (total % 100 == 0):
+                yx_loss     = int(total_yx_loss     / total_loss * 100)
+                hw_loss     = int(total_hw_loss     / total_loss * 100)
+                obj_loss    = int(total_obj_loss    / total_loss * 100)
+                no_obj_loss = int(total_no_obj_loss / total_loss * 100)
+                cat_loss    = int(total_cat_loss    / total_loss * 100)
+                avg_loss = total_loss / total
+                avg_rate = (total * args.batch_size) / (time.time() - start)
+                write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
+
+
 
 ####################################
 
