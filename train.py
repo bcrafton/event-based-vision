@@ -194,8 +194,7 @@ def write(filename, text):
 
 ####################################
 
-if args.train: N = 1459 # 1458.npy
-else:          N = 250
+N = 7
 
 if args.train: epochs = args.epochs
 else:          epochs = 1
@@ -217,8 +216,7 @@ def run_train():
             if (n % 100) == 0:
                 print (n)
 
-            if args.train: filename = './dataset/train/%d.npy' % (n)
-            else:          filename = './dataset/val/%d.npy' % (n)
+            filename = './dataset/train/%d.npy' % (n)
 
             load = np.load(filename, allow_pickle=True).item()
             xs, ys = load['x'], load['y']

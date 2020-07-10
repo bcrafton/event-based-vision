@@ -69,9 +69,9 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 if __name__ == '__main__':
 
     ###########################################################
-    '''
+    
     records = []
-    for subdir, dirs, files in os.walk('/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'):
+    for subdir, dirs, files in os.walk('/home/brian/Desktop/event-based-vision/dataset/src_data'):
         for file in files:
             filename, file_extension = os.path.splitext(file)
             if file_extension == '.dat':
@@ -82,9 +82,9 @@ if __name__ == '__main__':
         print (record)
 
     play_files_parallel('./train', records, skip=0, delta_t=20000)
-    '''
+    
     ###########################################################
-
+    '''
     records = []
     for subdir, dirs, files in os.walk('/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'):
         for file in files:
@@ -97,7 +97,7 @@ if __name__ == '__main__':
         print (record)
 
     play_files_parallel('./val', records, skip=0, delta_t=20000)
-
+    '''
     ###########################################################
     
     
