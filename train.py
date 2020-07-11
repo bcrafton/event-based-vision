@@ -163,7 +163,7 @@ if   args.train: filenames = collect_filenames('./dataset/train')
 else:            filenames = collect_filenames('./dataset/val')
 
 dataset = tf.data.TFRecordDataset(filenames)
-# dataset = dataset.shuffle(buffer_size=100000, reshuffle_each_iteration=False)
+dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
 dataset = dataset.map(extract_fn, num_parallel_calls=4)
 dataset = dataset.batch(args.batch_size, drop_remainder=True)
 # dataset = dataset.repeat()
