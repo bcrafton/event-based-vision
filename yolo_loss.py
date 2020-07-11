@@ -1,5 +1,4 @@
 
-import numpy as np
 import tensorflow as tf
 
 offset_np = [
@@ -12,15 +11,7 @@ offset_np = [
 
 offset = tf.constant(offset_np, dtype=tf.float32)
 
-'''
-def grid_to_pix(box):
-    pix_box_yx = 48. * box[:, :, :, :, 0:2] + offset
-    pix_box_h = box[:, :, :, :, 2:3] * 240. 
-    pix_box_w = box[:, :, :, :, 3:4] * 288.
-    pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
-    return pix_box
-'''
-
+@tf.function(experimental_relax_shapes=False)
 def grid_to_pix(box):
     pix_box_yx = 48. * box[:, :, :, :, 0:2] + offset
     pix_box_h = tf.square(box[:, :, :, :, 2:3]) * 240.
@@ -28,11 +19,13 @@ def grid_to_pix(box):
     pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
     return pix_box
 
+@tf.function(experimental_relax_shapes=False)
 def calc_iou(boxA, boxB, realBox):
     iou1 = calc_iou_help(boxA, realBox)
     iou2 = calc_iou_help(boxB, realBox)
     return tf.stack([iou1, iou2], axis=4)
 
+@tf.function(experimental_relax_shapes=False)
 def calc_iou_help(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
     yA = tf.maximum(boxA[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] - 0.5 * boxB[:,:,:,:,2])
@@ -70,7 +63,8 @@ def sign_no_grad(x):
         return dy
     return tf.sign(x), grad
 
-def yolo_loss(batch_size, pred, label, obj, no_obj, cat, vld):
+@tf.function(experimental_relax_shapes=False)
+def yolo_loss(batch_size, pred, label):
 
     # pred   = [4,     7, 7, 90]
     # label  = [4, -1, 7, 7, 5]
@@ -79,6 +73,10 @@ def yolo_loss(batch_size, pred, label, obj, no_obj, cat, vld):
     # cat    = [4, -1, 7, 7]
 
     pred = tf.reshape(pred, [batch_size, 1, 5, 6, 12])
+    obj    = label[:, :, :, :, 4]
+    no_obj = label[:, :, :, :, 5]
+    cat    = tf.cast(label[:, :, :, :, 6], dtype=tf.int32)
+    vld    = label[:, :, :, :, 7]
 
     ######################################
 

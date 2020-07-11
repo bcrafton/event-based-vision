@@ -5,27 +5,6 @@ import cv2
 
 ##############################################################
 
-colors = [
-np.array([1.0, 0.0, 0.0]),
-np.array([0.0, 1.0, 0.0]),
-np.array([0.0, 0.0, 1.0]),
-
-np.array([1.0, 1.0, 0.0]),
-np.array([1.0, 0.0, 1.0]),
-np.array([0.0, 1.0, 1.0])
-]
-
-color_names = [
-'red',
-'green',
-'blue',
-'yellow',
-'violet',
-'cyan'
-]
-
-##############################################################
-
 offset_np = [
 [  [0, 0],   [0, 48],   [0, 96],   [0, 144],   [0, 192],   [0, 240]], 
 [ [48, 0],  [48, 48],  [48, 96],  [48, 144],  [48, 192],  [48, 240]], 
@@ -72,68 +51,64 @@ def calc_iou_help(boxA, boxB):
     # return the intersection over union value
     return iou
 
-def draw_box(name, image, label, pred, nbox):
-    objs      = label[..., 4]
-    true_boxs = grid_to_pix(label[..., 0:4])
-    boxs1     = grid_to_pix(pred[..., 0:4])
-    boxs2     = grid_to_pix(pred[..., 5:9])
-    iou = calc_iou(true_boxs, boxs1, boxs2)
-
-    conf1 = pred[..., 4]
-    conf2 = pred[..., 9]
-
+def draw_box(name, image, truth, pred):
     true_image = np.copy(image)
     pred_image = np.copy(image)
+    truth = np.copy(truth)
+    pred = np.copy(pred)
 
-    nbox = min(nbox, len(colors))
-    for b in range(nbox):
-        obj = objs[b]
-        [yc, xc] = np.squeeze(np.where(obj > 0))
+    ############################################
 
-        box = np.array(true_boxs[b][yc][xc], dtype=int)
-        draw_box_help(true_image, box, colors[b])
-        
-        '''
-        iou1 = iou[b][yc][xc][0]
-        iou2 = iou[b][yc][xc][1]
-        
-        conf1 = pred[yc][xc][4]
-        conf2 = pred[yc][xc][9]
-        
-        # if conf1 > conf2:
-        if iou1 > iou2:
-            box = np.array(boxs1[yc][xc], dtype=int)
-        else:
-            box = np.array(boxs2[yc][xc], dtype=int)
-        
-        draw_box_help(pred_image, box, colors[b])
-        '''
-        
-    for yc in range (5):
-        for xc in range(6):
-            if conf1[yc][xc] > 0.25:
-                draw_box_help(pred_image, boxs1[yc][xc], None)
-            if conf2[yc][xc] > 0.25:
-                draw_box_help(pred_image, boxs2[yc][xc], None)
+    boxes   = grid_to_pix(truth[:, :, :, 0:4])
+    objs    = truth[:, :, :, 4]
+    no_objs = truth[:, :, :, 5]
+    cats    = truth[:, :, :, 6]
+    vld     = truth[:, :, :, 7]
+    
+    obj = np.where(truth[:, :, :, 4] == 1)
+    box = boxes[obj]
+    cat = cats[obj]
+    
+    ndet = len(box)
+    for d in range(ndet):
+        draw_box_help(true_image, box[d], None)
+
+    ############################################
+    
+    cat = np.argmax(pred[:, :, 10:12], axis=-1)
+    
+    box1  = grid_to_pix(pred[:, :, 0:4])
+    conf1 = pred[:, :, 4]
+    obj1 = np.where(conf1 > 0.25)
+    boxes1 = box1[obj1]
+    conf1 = conf1[obj1]
+    cat1 = cat[obj1]
+    
+    ndet = len(conf1)
+    for d in range(ndet):
+        draw_box_help(pred_image, boxes1[d], None)
+    
+    ############################################
+
+    cat = np.argmax(pred[:, :, 10:12], axis=-1)
+
+    box2  = grid_to_pix(pred[:, :, 5:9])
+    conf2 = pred[:, :, 9]
+    obj2 = np.where(conf2 > 0.25)
+    boxes2 = box2[obj2]
+    conf2 = conf2[obj2]
+    cat2 = cat[obj2]
+
+    ndet = len(conf2)
+    for d in range(ndet):
+        draw_box_help(pred_image, boxes2[d], None)
+    
+    ############################################
         
     concat = np.concatenate((true_image, pred_image), axis=1)
     plt.imsave(name, concat)
 
 def draw_box_help(image, box, color):
-    '''
-    [y, x, h, w] = box
-    [x11, x12, x21, x22] = np.array([x-0.5*w, x-0.5*w+5, x+0.5*w-5, x+0.5*w], dtype=int)
-    [y11, y12, y21, y22] = np.array([y-0.5*h, y-0.5*h+5, y+0.5*h-5, y+0.5*h], dtype=int)
-    image[y11:y12, x12:x21] = 1.
-    image[y21:y22, x12:x21] = 1.
-    image[y12:y21, x11:x12] = 1.
-    image[y12:y21, x21:x22] = 1.
-    '''
-    '''
-    pt1 = (int(boxes['x'][i]), int(boxes['y'][i]))
-    pt2 = (pt1[0] + size[0], pt1[1] + size[1])
-    cv2.rectangle(img, pt1, pt2, color, 1)
-    '''
     [y, x, h, w] = box
     pt1 = (int(x-0.5*w), int(y-0.5*h))
     pt2 = (int(x+0.5*w), int(y+0.5*h))
