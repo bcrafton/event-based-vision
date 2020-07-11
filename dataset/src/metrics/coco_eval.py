@@ -189,7 +189,6 @@ def _to_coco_format(gts, detections, categories, height=240, width=304):
             annotations.append(annotation)
 
         for bbox in pred:
-
             image_result = {
                 'image_id': im_id,
                 'category_id': int(bbox[5]) + 1,

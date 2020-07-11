@@ -2,6 +2,7 @@
 import numpy as np
 import tensorflow as tf
 from dataset.src.metrics.coco_eval import evaluate_detection
+from dataset.src.metrics.coco_eval import _coco_eval
 
 ####################################
 
@@ -102,7 +103,7 @@ def calc_map(truth, pred):
     assert (False)
     '''
     
-    evaluate_detection(det_list, truth)
+    _coco_eval(truth, det_list, height=240, width=304)
     
 ####################################
 
