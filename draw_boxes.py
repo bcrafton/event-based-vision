@@ -54,6 +54,8 @@ def calc_iou_help(boxA, boxB):
 def draw_box(name, image, truth, pred):
     true_image = np.copy(image)
     pred_image = np.copy(image)
+    truth = np.copy(truth)
+    pred = np.copy(pred)
 
     ############################################
 

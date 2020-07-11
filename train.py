@@ -200,11 +200,16 @@ for epoch in range(args.epochs):
         total += 1
 
         if not args.train:
-            ys.append(y.numpy())
-            preds.append(out.numpy())
+            true, pred = y.numpy(), out.numpy()
+            ys.append(np.copy(true))
+            preds.append(np.copy(pred))
+            # careful this changes the inputs
+            # calc_map(true, pred)
+            # careful this changes the inputs
+            draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
 
-        del(x)
-        del(y)
+        # del(x)
+        # del(y)
 
         if (total % 100 == 0):
             yx_loss     = int(total_yx_loss     / total_loss * 100)
@@ -217,9 +222,15 @@ for epoch in range(args.epochs):
             write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total * args.batch_size, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
 
     if not args.train:
-        ys = np.concatenate(ys, axis=0)
-        preds = np.concatenate(preds, axis=0)
-        calc_map(ys, preds)
+        ys = np.concatenate(ys, axis=0).astype(np.float32)
+        preds = np.concatenate(preds, axis=0).astype(np.float32)
+
+        results = {}
+        results['true'] = ys
+        results['pred'] = preds
+        np.save('results', results)
+
+        calc_map(ys, preds) # careful this changes the inputs
 
     trained_weights = model.get_weights()
     np.save(name + '_weights', trained_weights)

@@ -30,6 +30,9 @@ def grid_to_pix(box):
 
 def calc_map(truth, pred):
     
+    truth = np.copy(truth)
+    pred = np.copy(pred)
+
     # nb, nd, ny, nx, nbox = np.shape(truth)
     # print (np.shape(truth)) # (16, 8, 5, 6, 8)
     # print (np.shape(pred))  # (16, 5, 6, 12)
@@ -40,14 +43,11 @@ def calc_map(truth, pred):
     for n in range(N):
         dets = []
     
-        # see generate_tfrecord.py
         boxes   = grid_to_pix(truth[n, :, :, :, 0:4])
         objs    = truth[n, :, :, :, 4]
         no_objs = truth[n, :, :, :, 5]
         cats    = truth[n, :, :, :, 6]
         vld     = truth[n, :, :, :, 7]
-        # print (truth[n, :, :, :, 4])
-        # print (truth[n, :, :, :, 7])
         
         obj = np.where(truth[n, :, :, :, 4] == 1)
         box = boxes[obj]

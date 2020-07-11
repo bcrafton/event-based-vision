@@ -130,7 +130,7 @@ def extract_fn(record):
 
 ------
 
-
+>> make sure (truth, pred) in function calls
 
 
 
