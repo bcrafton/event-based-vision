@@ -132,5 +132,73 @@ def extract_fn(record):
 
 >> make sure (truth, pred) in function calls
 
+------
+
+Traceback (most recent call last):
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/eager/context.py", line 1986, in execution_mode
+    yield
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 655, in _next_internal
+    output_shapes=self._flat_output_shapes)
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/ops/gen_dataset_ops.py", line 2363, in iterator_get_next
+    _ops.raise_from_not_ok_status(e, name)
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/framework/ops.py", line 6653, in raise_from_not_ok_status
+    six.raise_from(core._status_to_exception(e.code, message), None)
+  File "<string>", line 3, in raise_from
+tensorflow.python.framework.errors_impl.DataLossError: corrupted record at 12 [Op:IteratorGetNext]
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "train.py", line 186, in <module>
+    for (x, y) in dataset:
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 631, in __next__
+    return self.next()
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 670, in next
+    return self._next_internal()
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/data/ops/iterator_ops.py", line 661, in _next_internal
+    return structure.from_compatible_tensor_list(self._element_spec, ret)
+  File "/usr/lib/python3.6/contextlib.py", line 99, in __exit__
+    self.gen.throw(type, value, traceback)
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/eager/context.py", line 1989, in execution_mode
+    executor_new.wait()
+  File "/home/bcrafton3/python_environment/py3/lib/python3.6/site-packages/tensorflow/python/eager/executor.py", line 67, in wait
+    pywrap_tfe.TFE_ExecutorWaitForAllPendingNodes(self._handle)
+tensorflow.python.framework.errors_impl.DataLossError: corrupted record at 12
+
+>> this is unfortunate.
+> especially because it was actually doing well.
+
+> not sure how the others are still running if this threw a corrupted record error.
+
+------
+
+we can probably build some [loss, mAP] table on what to expect given some loss.
+
+rerunning from checkpoint ...
+
+------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
