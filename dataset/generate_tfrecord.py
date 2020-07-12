@@ -123,8 +123,8 @@ val_path   = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
 '''
 ###########################################################
 
-train_path = './src_data/'
-val_path = ''
+train_path = './train_src/'
+val_path = './val_src/'
 
 ###########################################################
 
