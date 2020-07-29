@@ -30,6 +30,7 @@ def _bytes_feature(value):
 
 def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
+    ex = 0
     frame = np.zeros((240, 304, 3), dtype=np.uint8)
     
     for video_idx in range(len(td_files)):
@@ -39,7 +40,6 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
         box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
         
         frames = []
-        frame_idx = 0
         while not video.done:
 
             events = video.load_delta_t(delta_t)
@@ -99,7 +99,8 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                 ###################################
 
                 if np.shape(frames) == (240, 288, 12):
-                    filename = '%s/%d_%d.tfrecord' % (path, video_idx, frame_idx)
+                    filename = '%s/%d.tfrecord' % (path, ex)
+                    ex += 1
 
                     with tf.io.TFRecordWriter(filename) as writer:
                         image_raw = frames.astype(np.uint8).tostring()
@@ -113,8 +114,7 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                         writer.write(example.SerializeToString())
 
                 frames = []
-                frame_idx += 1
-
+                
 
 ###########################################################
 '''
