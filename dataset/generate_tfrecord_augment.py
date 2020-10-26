@@ -122,32 +122,49 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
                     ###################################
 
-                    if np.shape(frames) == (240, 288, 12):
-                        img = np.mean(frames, axis=-1)
+                    if np.shape(frames_cp) == (240, 288, 12):
+                        img = np.mean(frames_cp, axis=-1)
                         img = img - np.min(img)
                         std = np.std(img)
                         if std > 5:
                             filename = '%s/%d_%d_%d_%d.tfrecord' % (path, video_idx, frame_idx, flr, fud)
-                            write_tfrecord(filename, frames, det_np)
+                            write_tfrecord(filename, frames_cp, det_np)
 
                 frames = []
                 frame_idx += 1
 
 ###########################################################
 
-train_path = './train_src/'
-val_path = './val_src/'
+def collect_filenames(path):
+    filenames = []
+    for subdir, dirs, files in os.walk(path):
+        for file in files:
+            filename, file_extension = os.path.splitext(file)
+            if file_extension == '.dat':
+                filenames.append(os.path.join(subdir, file))
+
+    filenames = sorted(filenames)
+    return filenames
 
 ###########################################################
 
-records = []
-for subdir, dirs, files in os.walk(train_path):
-    for file in files:
-        filename, file_extension = os.path.splitext(file)
-        if file_extension == '.dat':
-            records.append(os.path.join(subdir, file))
+train_path  = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
+val_path    = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
+test_a_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_a/'
+test_b_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_b/'
 
-records = sorted(records)
+###########################################################
+'''
+train_path = './src_data/'
+val_path = ''
+'''
+###########################################################
+
+records = []
+records = records + collect_filenames(train_path)
+records = records + collect_filenames(val_path)
+records = records + collect_filenames(test_b_path)
+
 for record in records:
     print (record)
 
@@ -156,13 +173,8 @@ play_files_parallel('./train', records, skip=0, delta_t=20000)
 ###########################################################
 
 records = []
-for subdir, dirs, files in os.walk(val_path):
-    for file in files:
-        filename, file_extension = os.path.splitext(file)
-        if file_extension == '.dat':
-            records.append(os.path.join(subdir, file))
+records = records + collect_filenames(test_a_path)
 
-records = sorted(records)
 for record in records:
     print (record)
 
