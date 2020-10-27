@@ -108,10 +108,11 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
                     boxes_np = []
                     for box in boxes:
+                        # t, x, y, w, h
                         box[1] = round(box[1] * (288 / 304))
                         box[3] = round(box[3] * (288 / 304))
-                        if flr: box[0] = 288 - box[1]
-                        if fud: box[1] = 240 - box[0]
+                        if flr: box[1] = 288 - box[1]
+                        if fud: box[2] = 240 - box[2]
                         box_np = np.array(list(box))
                         boxes_np.append(box_np)
                     boxes_np = np.array(boxes_np)
