@@ -71,7 +71,7 @@ def draw_box(name, image, truth, pred):
     
     ndet = len(box)
     for d in range(ndet):
-        draw_box_help(true_image, box[d], None)
+        draw_box_help(true_image, box[d], cat[d], None)
 
     ############################################
     
@@ -86,7 +86,7 @@ def draw_box(name, image, truth, pred):
     
     ndet = len(conf1)
     for d in range(ndet):
-        draw_box_help(pred_image, boxes1[d], None)
+        draw_box_help(pred_image, boxes1[d], cat1[d], None)
     
     ############################################
 
@@ -101,19 +101,20 @@ def draw_box(name, image, truth, pred):
 
     ndet = len(conf2)
     for d in range(ndet):
-        draw_box_help(pred_image, boxes2[d], None)
+        draw_box_help(pred_image, boxes2[d], cat2[d], None)
     
     ############################################
         
     concat = np.concatenate((true_image, pred_image), axis=1)
     plt.imsave(name, concat)
 
-def draw_box_help(image, box, color):
+def draw_box_help(image, box, cat, color):
     [y, x, h, w] = box
     pt1 = (int(x-0.5*w), int(y-0.5*h))
     pt2 = (int(x+0.5*w), int(y+0.5*h))
     cv2.rectangle(image, pt1, pt2, 0, 1)
-
+    label = 'Human' if cat == 1 else 'Car'
+    cv2.putText(image, label, (int(x), int(y)), 0, 0.3, (0, 255, 0))
 
 
 

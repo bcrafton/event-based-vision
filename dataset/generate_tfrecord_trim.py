@@ -154,7 +154,7 @@ train_path = './src_data/'
 val_path = ''
 '''
 ###########################################################
-
+'''
 records = []
 records = records + collect_filenames(train_path)
 records = records + collect_filenames(val_path)
@@ -164,11 +164,12 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-
+'''
 ###########################################################
 
 records = []
 records = records + collect_filenames(test_a_path)
+# records = records + collect_filenames(test_b_path)
 
 for record in records:
     print (record)

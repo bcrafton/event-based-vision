@@ -47,10 +47,11 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = None # np.load('models/resnet_yolo.npy', allow_pickle=True).item()
+    # weights = None # np.load('models/resnet_yolo.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo1.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo1.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo2.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -207,8 +208,15 @@ for epoch in range(args.epochs):
             # careful this changes the inputs
             draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
 
-        # del(x)
-        # del(y)
+        if total % 1000 == 0:
+            yx_loss     = int(total_yx_loss     / total_loss * 100)
+            hw_loss     = int(total_hw_loss     / total_loss * 100)
+            obj_loss    = int(total_obj_loss    / total_loss * 100)
+            no_obj_loss = int(total_no_obj_loss / total_loss * 100)
+            cat_loss    = int(total_cat_loss    / total_loss * 100)
+            avg_loss = total_loss / total
+            avg_rate = (total * args.batch_size) / (time.time() - start)
+            write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total * args.batch_size, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
 
     yx_loss     = int(total_yx_loss     / total_loss * 100)
     hw_loss     = int(total_hw_loss     / total_loss * 100)
