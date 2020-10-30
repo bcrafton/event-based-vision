@@ -170,7 +170,13 @@ def yolo_loss(batch_size, pred, label):
 
     ######################################
 
-    cat_loss = 2. * obj * vld * tf.reduce_sum(tf.square(pred_cat - label_cat), axis=4)
+    # (1)
+    cat_loss = tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=tf.repeat(pred_cat, 8, 1))
+    cat_loss = obj * vld * cat_loss
+
+    # (2)
+    # cat_loss = 2. * obj * vld * tf.reduce_sum(tf.square(pred_cat - label_cat), axis=4)
+
     cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
 
     ######################################

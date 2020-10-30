@@ -48,10 +48,10 @@ from calc_map import calc_map
 
 if args.train:
     # weights = None # np.load('models/resnet_yolo.npy', allow_pickle=True).item()
-    weights = np.load('models/resnet_yolo1.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo2.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo2.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo3.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
