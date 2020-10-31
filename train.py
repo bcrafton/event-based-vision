@@ -47,11 +47,10 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    # weights = None # np.load('models/resnet_yolo.npy', allow_pickle=True).item()
-    weights = np.load('models/resnet_yolo2.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo4.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo3.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo5.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -86,7 +85,7 @@ res_block2(512,  512, 1, weights=weights), # 5, 6
 res_block1(512,  512, 1, weights=weights), # 5, 6
 
 dense_block(5*6*512, 2048, weights=weights, dropout=dropout),
-dense_block(2048, 5*6*12, weights=weights, relu=False),
+dense_block(2048, 5*6*14, weights=weights, relu=False),
 ])
 
 params = model.get_params()
@@ -101,7 +100,7 @@ batch_size_tf = tf.constant(args.batch_size)
 def gradients(model, x, y):
     with tf.GradientTape() as tape:
         out = model.train(x)
-        out = tf.reshape(out, (args.batch_size, 5, 6, 12))
+        out = tf.reshape(out, (args.batch_size, 5, 6, 14))
         loss, losses = yolo_loss(batch_size_tf, out, y)
 
     grad = tape.gradient(loss, params)
@@ -112,7 +111,7 @@ def gradients(model, x, y):
 @tf.function(experimental_relax_shapes=False)
 def predict(model, x):
     out = model.train(x)
-    out = tf.reshape(out, (args.batch_size, 5, 6, 12))
+    out = tf.reshape(out, (args.batch_size, 5, 6, 14))
     return out
 
 ####################################

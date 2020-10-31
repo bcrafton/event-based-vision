@@ -75,14 +75,13 @@ def draw_box(name, image, truth, pred):
 
     ############################################
     
-    cat = np.argmax(pred[:, :, 10:12], axis=-1)
-    
+    cat1 = np.argmax(pred[:, :, 10:12], axis=-1)
     box1  = grid_to_pix(pred[:, :, 0:4])
     conf1 = pred[:, :, 4]
     obj1 = np.where(conf1 > 0.25)
     boxes1 = box1[obj1]
     conf1 = conf1[obj1]
-    cat1 = cat[obj1]
+    cat1 = cat1[obj1]
     
     ndet = len(conf1)
     for d in range(ndet):
@@ -90,14 +89,13 @@ def draw_box(name, image, truth, pred):
     
     ############################################
 
-    cat = np.argmax(pred[:, :, 10:12], axis=-1)
-
+    cat2 = np.argmax(pred[:, :, 12:14], axis=-1)
     box2  = grid_to_pix(pred[:, :, 5:9])
     conf2 = pred[:, :, 9]
     obj2 = np.where(conf2 > 0.25)
     boxes2 = box2[obj2]
     conf2 = conf2[obj2]
-    cat2 = cat[obj2]
+    cat2 = cat2[obj2]
 
     ndet = len(conf2)
     for d in range(ndet):

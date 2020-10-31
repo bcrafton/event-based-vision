@@ -52,7 +52,7 @@ def calc_map(truth, pred):
 
         obj = np.where(truth[n, :, :, :, 4] == 1)
         box = boxes[obj]
-        cat = cats[obj]
+        cat = cats[obj].astype(int)
 
         ndet = len(box)
         for d in range(ndet):
@@ -66,17 +66,17 @@ def calc_map(truth, pred):
     for n in range(N):
         dets = []
 
-        cat = np.argmax(pred[n][:, :, 10:12], axis=-1).reshape(-1)
-
+        cat1  = np.argmax(pred[n][:, :, 10:12], axis=-1).reshape(-1).astype(int)
         box1  = grid_to_pix(pred[n][:, :, 0:4]).reshape(-1, 4)
         conf1 = pred[n][:, :, 4].reshape(-1)
 
+        cat2  = np.argmax(pred[n][:, :, 12:14], axis=-1).reshape(-1).astype(int)
         box2  = grid_to_pix(pred[n][:, :, 5:9]).reshape(-1, 4)
         conf2 = pred[n][:, :, 9].reshape(-1)
 
         box = np.concatenate((box1, box2), axis=0)
         conf = np.concatenate((conf1, conf2), axis=0)
-        cat = np.concatenate((cat, cat), axis=0)
+        cat = np.concatenate((cat1, cat2), axis=0).astype(int)
 
         order = np.argsort(conf)
         box = box[order]

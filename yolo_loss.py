@@ -72,7 +72,7 @@ def yolo_loss(batch_size, pred, label):
     # no_obj = [4, -1, 7, 7]
     # cat    = [4, -1, 7, 7]
 
-    pred = tf.reshape(pred, [batch_size, 1, 5, 6, 12])
+    pred = tf.reshape(pred, [batch_size, 1, 5, 6, 14])
     obj    = label[:, :, :, :, 4]
     no_obj = label[:, :, :, :, 5]
     cat    = tf.cast(label[:, :, :, :, 6], dtype=tf.int32)
@@ -109,7 +109,8 @@ def yolo_loss(batch_size, pred, label):
     ############################
 
     label_cat = tf.one_hot(cat, depth=2)
-    pred_cat = pred[:, :, :, :, 10:12]
+    pred_cat1 = pred[:, :, :, :, 10:12]
+    pred_cat2 = pred[:, :, :, :, 12:14]
 
     ############################
 
@@ -171,13 +172,65 @@ def yolo_loss(batch_size, pred, label):
     ######################################
 
     # (1)
-    cat_loss = tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=tf.repeat(pred_cat, 8, 1))
-    cat_loss = obj * vld * cat_loss
+    '''
+    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
+    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
 
-    # (2)
-    # cat_loss = 2. * obj * vld * tf.reduce_sum(tf.square(pred_cat - label_cat), axis=4)
+    cat_loss1 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat1)
+    cat_loss2 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat2)
+    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
 
     cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
+    '''
+
+    # (2)
+    '''
+    cat_loss = 2. * obj * vld * tf.reduce_sum(tf.square(pred_cat - label_cat), axis=4)
+    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
+    '''
+
+    # (3)
+    '''
+    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
+    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
+
+    cat_loss1 = 2. * obj * vld * tf.reduce_sum(tf.constant([1, 10], dtype=tf.float32) * tf.square(pred_cat1 - label_cat), axis=4)
+    cat_loss2 = 2. * obj * vld * tf.reduce_sum(tf.constant([1, 10], dtype=tf.float32) * tf.square(pred_cat2 - label_cat), axis=4)
+    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
+
+    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
+    '''
+
+    # 228,123 cars and 27,658 pedestrians bounding boxes
+    # (4)
+    # lol - this is wrong.
+    '''
+    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
+    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
+
+    car_loss1 = obj * vld * tf.square(pred_cat1[..., 0] - label_cat[..., 0])
+    ped_loss1 = obj * vld * tf.square(pred_cat1[..., 1] - label_cat[..., 1]) * 10
+    cat_loss1 = car_loss1 + ped_loss1
+
+    car_loss2 = obj * vld * tf.square(pred_cat2[..., 0] - label_cat[..., 0])
+    ped_loss2 = obj * vld * tf.square(pred_cat2[..., 1] - label_cat[..., 1]) * 10
+    cat_loss2 = car_loss2 + ped_loss2
+
+    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
+    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
+    '''
+
+    # (5)
+    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
+    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
+
+    cat_loss1 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat1)
+    cat_loss2 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat2)
+
+    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
+    cat_loss = tf.where(tf.equal(cat, tf.constant(1)), cat_loss * 10, cat_loss)
+
+    cat_loss = 2 * tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
 
     ######################################
 
