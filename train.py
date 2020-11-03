@@ -50,7 +50,7 @@ if args.train:
     weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_bn.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################

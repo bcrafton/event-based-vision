@@ -89,15 +89,15 @@ class conv_block(layer):
                 var, mean = weights[self.weight_id]['var'], weights[self.weight_id]['mean']
                 self.var = tf.Variable(var, dtype=tf.float32)
                 self.mean = tf.Variable(mean, dtype=tf.float32)
+            else:
+                self.total = 0
+                self.var = np.zeros(shape=self.f2)
+                self.mean = np.zeros(shape=self.f2)
         else:
             f_np = init_filters(size=[self.k, self.k, self.f1, self.f2], init='glorot_uniform')
             self.f = tf.Variable(f_np, dtype=tf.float32)
             self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
             self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
-
-        self.total = 0
-        self.var = np.zeros(shape=self.f2)
-        self.mean = np.zeros(shape=self.f2)
 
     def train(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
@@ -125,8 +125,10 @@ class conv_block(layer):
     def predict(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
         conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
-        mean, var = tf.nn.moments(conv, axes=[0,1,2])
-        bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, tf.constant(1e-5, dtype=tf.float32))
+
+        # mean, var = tf.nn.moments(conv, axes=[0,1,2])
+        bn = tf.nn.batch_normalization(conv, self.mean, self.var, self.b, self.g, tf.constant(1e-5, dtype=tf.float32))
+
         if self.relu: out = tf.nn.relu(bn)
         else:         out = bn
         return out
@@ -168,6 +170,18 @@ class res_block1(layer):
         y3 = tf.nn.relu(x + y2)
         return y3
 
+    def collect(self, x):
+        y1 = self.conv1.collect(x)
+        y2 = self.conv2.collect(y1)
+        y3 = tf.nn.relu(x + y2)
+        return y3
+
+    def predict(self, x):
+        y1 = self.conv1.predict(x)
+        y2 = self.conv2.predict(y1)
+        y3 = tf.nn.relu(x + y2)
+        return y3
+
     def get_weights(self):
         weights_dict = {}
         weights1 = self.conv1.get_weights()
@@ -203,6 +217,20 @@ class res_block2(layer):
         y1 = self.conv1.train(x)
         y2 = self.conv2.train(y1)
         y3 = self.conv3.train(x)
+        y4 = tf.nn.relu(y2 + y3)
+        return y4
+
+    def collect(self, x):
+        y1 = self.conv1.collect(x)
+        y2 = self.conv2.collect(y1)
+        y3 = self.conv3.collect(x)
+        y4 = tf.nn.relu(y2 + y3)
+        return y4
+
+    def predict(self, x):
+        y1 = self.conv1.predict(x)
+        y2 = self.conv2.predict(y1)
+        y3 = self.conv3.predict(x)
         y4 = tf.nn.relu(y2 + y3)
         return y4
 
