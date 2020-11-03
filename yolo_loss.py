@@ -172,7 +172,6 @@ def yolo_loss(batch_size, pred, label):
     ######################################
 
     # (1)
-    '''
     pred_cat1 = tf.repeat(pred_cat1, 8, 1)
     pred_cat2 = tf.repeat(pred_cat2, 8, 1)
 
@@ -181,7 +180,6 @@ def yolo_loss(batch_size, pred, label):
     cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
 
     cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
-    '''
 
     # (2)
     '''
@@ -221,6 +219,7 @@ def yolo_loss(batch_size, pred, label):
     '''
 
     # (5)
+    '''
     pred_cat1 = tf.repeat(pred_cat1, 8, 1)
     pred_cat2 = tf.repeat(pred_cat2, 8, 1)
 
@@ -231,6 +230,7 @@ def yolo_loss(batch_size, pred, label):
     cat_loss = tf.where(tf.equal(cat, tf.constant(1)), cat_loss * 10, cat_loss)
 
     cat_loss = 2 * tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
+    '''
 
     ######################################
 
