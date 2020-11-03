@@ -18,6 +18,12 @@ class model:
         for layer in self.layers:
             y = layer.train(y)
         return y
+
+    def collect(self, x):
+        y = x
+        for layer in self.layers:
+            y = layer.collect(y)
+        return y
     
     def get_weights(self):
         weights_dict = {}
@@ -42,7 +48,10 @@ class layer:
         
     def train(self, x):        
         assert(False)
-        
+
+    def collect(self, x):
+        return self.train(x)
+
     def get_weights(self):
         assert(False)
         
@@ -72,6 +81,10 @@ class conv_block(layer):
             self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
             self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
 
+        self.total = 0
+        self.var = np.zeros(shape=self.f2)
+        self.mean = np.zeros(shape=self.f2)
+
     def train(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
         conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
@@ -80,10 +93,26 @@ class conv_block(layer):
         if self.relu: out = tf.nn.relu(bn)
         else:         out = bn
         return out 
-    
+
+    def collect(self, x):
+        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
+        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
+        mean, var = tf.nn.moments(conv, axes=[0,1,2])
+
+        self.var += var.numpy()
+        self.mean += mean.numpy()
+        self.total += 1
+
+        bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)
+        if self.relu: out = tf.nn.relu(bn)
+        else:         out = bn
+        return out
+
     def get_weights(self):
         weights_dict = {}
-        weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
+        var = self.var / self.total
+        mean = self.mean / self.total
+        weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
         return weights_dict
 
     def get_params(self):
