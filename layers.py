@@ -110,9 +110,12 @@ class conv_block(layer):
 
     def get_weights(self):
         weights_dict = {}
-        var = self.var / self.total
-        mean = self.mean / self.total
-        weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
+        if self.total > 0:
+            var = self.var / self.total
+            mean = self.mean / self.total
+            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
+        else:
+            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
         return weights_dict
 
     def get_params(self):
