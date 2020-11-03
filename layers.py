@@ -24,7 +24,13 @@ class model:
         for layer in self.layers:
             y = layer.collect(y)
         return y
-    
+
+    def predict(self, x):
+        y = x
+        for layer in self.layers:
+            y = layer.predict(y)
+        return y
+
     def get_weights(self):
         weights_dict = {}
         for layer in self.layers:
@@ -50,6 +56,9 @@ class layer:
         assert(False)
 
     def collect(self, x):
+        return self.train(x)
+
+    def predict(self, x):
         return self.train(x)
 
     def get_weights(self):
@@ -116,7 +125,8 @@ class conv_block(layer):
     def predict(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
         conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
-        bn = tf.nn.batch_normalization(conv, self.mean, self.var, self.b, self.g, 1e-5)
+        mean, var = tf.nn.moments(conv, axes=[0,1,2])
+        bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, tf.constant(1e-5, dtype=tf.float32))
         if self.relu: out = tf.nn.relu(bn)
         else:         out = bn
         return out
