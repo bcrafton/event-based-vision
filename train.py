@@ -109,8 +109,16 @@ def gradients(model, x, y):
 ####################################
 
 @tf.function(experimental_relax_shapes=False)
+def collect(model, x):
+    out = model.collect(x)
+    out = tf.reshape(out, (args.batch_size, 5, 6, 14))
+    return out
+
+####################################
+
+@tf.function(experimental_relax_shapes=False)
 def predict(model, x):
-    out = model.train(x)
+    out = model.predict(x)
     out = tf.reshape(out, (args.batch_size, 5, 6, 14))
     return out
 
@@ -198,15 +206,6 @@ for epoch in range(args.epochs):
         total_loss        += loss.numpy()
         total += 1
 
-        if not args.train:
-            true, pred = y.numpy(), out.numpy()
-            ys.append(np.copy(true))
-            preds.append(np.copy(pred))
-            # careful this changes the inputs
-            # calc_map(true, pred)
-            # careful this changes the inputs
-            draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
-
         if total % 1000 == 0:
             yx_loss     = int(total_yx_loss     / total_loss * 100)
             hw_loss     = int(total_hw_loss     / total_loss * 100)
@@ -226,27 +225,20 @@ for epoch in range(args.epochs):
     avg_rate = (total * args.batch_size) / (time.time() - start)
     write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total * args.batch_size, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
 
-    if not args.train:
-        ys = np.concatenate(ys, axis=0).astype(np.float32)
-        preds = np.concatenate(preds, axis=0).astype(np.float32)
-
-        results = {}
-        results['true'] = ys
-        results['pred'] = preds
-        np.save('results', results)
-
-        calc_map(ys, preds) # careful this changes the inputs
-
-    trained_weights = model.get_weights()
-    np.save(name + '_weights', trained_weights)
-
 ####################################
 
+total = 0
+start = time.time()
+for (x, y) in dataset:
+    out = collect(model, x)
+    if total % 1000 == 0:
+        avg_rate = (total * args.batch_size) / (time.time() - start)
+        print('total: %d, rate: %f' % (total * args.batch_size, avg_rate))
 
+trained_weights = model.get_weights()
+np.save(name + '_weights', trained_weights)
 
-
-
-
+####################################
 
 
 

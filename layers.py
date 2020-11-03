@@ -75,6 +75,11 @@ class conv_block(layer):
             self.f = tf.Variable(f, dtype=tf.float32)
             self.g = tf.Variable(g, dtype=tf.float32)
             self.b = tf.Variable(b, dtype=tf.float32)
+            if 'var' in weights[self.weight_id].keys():
+                assert ('mean' in weights[self.weight_id].keys())
+                var, mean = weights[self.weight_id]['var'], weights[self.weight_id]['mean']
+                self.var = tf.Variable(var, dtype=tf.float32)
+                self.mean = tf.Variable(mean, dtype=tf.float32)
         else:
             f_np = init_filters(size=[self.k, self.k, self.f1, self.f2], init='glorot_uniform')
             self.f = tf.Variable(f_np, dtype=tf.float32)
@@ -104,6 +109,14 @@ class conv_block(layer):
         self.total += 1
 
         bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)
+        if self.relu: out = tf.nn.relu(bn)
+        else:         out = bn
+        return out
+
+    def predict(self, x):
+        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
+        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
+        bn = tf.nn.batch_normalization(conv, self.mean, self.var, self.b, self.g, 1e-5)
         if self.relu: out = tf.nn.relu(bn)
         else:         out = bn
         return out
@@ -233,6 +246,24 @@ class dense_block(layer):
         else:         out = fc
 
         if self.dropout: out = tf.nn.dropout(out, 0.5)
+
+        return out
+
+    def collect(self, x):
+        x = tf.reshape(x, (-1, self.isize))
+        fc = tf.matmul(x, self.w) + self.b
+
+        if self.relu: out = tf.nn.relu(fc)
+        else:         out = fc
+
+        return out
+
+    def predict(self, x):
+        x = tf.reshape(x, (-1, self.isize))
+        fc = tf.matmul(x, self.w) + self.b
+
+        if self.relu: out = tf.nn.relu(fc)
+        else:         out = fc
 
         return out
 
