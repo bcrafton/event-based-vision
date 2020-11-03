@@ -47,10 +47,10 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo4.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo5.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -108,7 +108,8 @@ def gradients(model, x, y):
 
 ####################################
 
-@tf.function(experimental_relax_shapes=False)
+# can't have this decorator since we need to call .numpy() for var and mean.
+# @tf.function(experimental_relax_shapes=False)
 def collect(model, x):
     out = model.collect(x)
     out = tf.reshape(out, (args.batch_size, 5, 6, 14))
@@ -227,16 +228,18 @@ for epoch in range(args.epochs):
 
 ####################################
 
-total = 0
-start = time.time()
-for (x, y) in dataset:
-    out = collect(model, x)
-    if total % 1000 == 0:
-        avg_rate = (total * args.batch_size) / (time.time() - start)
-        print('total: %d, rate: %f' % (total * args.batch_size, avg_rate))
+if args.train:
+    total = 0
+    start = time.time()
+    for (x, y) in dataset:
+        out = collect(model, x)
+        total += 1
+        if total % 1000 == 0:
+            avg_rate = (total * args.batch_size) / (time.time() - start)
+            print('total: %d, rate: %f' % (total * args.batch_size, avg_rate))
 
-trained_weights = model.get_weights()
-np.save(name + '_weights', trained_weights)
+    trained_weights = model.get_weights()
+    np.save(name + '_weights', trained_weights)
 
 ####################################
 
