@@ -225,9 +225,12 @@ if args.train:
         avg_rate = (total * args.batch_size) / (time.time() - start)
         write(name + '.results', 'total: %d, rate: %f, loss %f (%d %d %d %d %d)' % (total * args.batch_size, avg_rate, avg_loss, yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss))
 
+        trained_weights = model.get_weights()
+        np.save(name + '_weights', trained_weights)
+
 ####################################
 
-if args.train:
+if args.train and (args.epochs == 0):
     total = 0
     start = time.time()
     for (x, y) in dataset:
@@ -263,6 +266,7 @@ if not args.train:
         preds.append(np.copy(pred))
         draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
 
+    print (total * args.batch_size)
     ys = np.concatenate(ys, axis=0).astype(np.float32)
     preds = np.concatenate(preds, axis=0).astype(np.float32)
 

@@ -84,13 +84,13 @@ class conv_block(layer):
             self.f = tf.Variable(f, dtype=tf.float32)
             self.g = tf.Variable(g, dtype=tf.float32)
             self.b = tf.Variable(b, dtype=tf.float32)
+            self.total = 0
             if 'var' in weights[self.weight_id].keys():
                 assert ('mean' in weights[self.weight_id].keys())
                 var, mean = weights[self.weight_id]['var'], weights[self.weight_id]['mean']
                 self.var = tf.Variable(var, dtype=tf.float32)
                 self.mean = tf.Variable(mean, dtype=tf.float32)
             else:
-                self.total = 0
                 self.var = np.zeros(shape=self.f2)
                 self.mean = np.zeros(shape=self.f2)
         else:
@@ -98,6 +98,10 @@ class conv_block(layer):
             self.f = tf.Variable(f_np, dtype=tf.float32)
             self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
             self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
+
+            self.total = 0
+            self.var = np.zeros(shape=self.f2)
+            self.mean = np.zeros(shape=self.f2)
 
     def train(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
