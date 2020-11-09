@@ -57,12 +57,12 @@ else:
 
 # 240, 288
 model = model(layers=[
-lstm_block((12,7,7,1,32)), # 240, 288
+lstm_block((4,7,7,1,16)), # 240, 288
 
 max_pool(s=3, p=3),
 
+res_block2(16,   32, 1, weights=None), # 80, 96
 res_block2(32,   64, 1, weights=None), # 80, 96
-res_block1(64,   64, 1, weights=None), # 80, 96
 
 max_pool(s=2, p=2),
 

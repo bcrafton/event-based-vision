@@ -266,19 +266,23 @@ class conv_lstm(layer):
 
         f_np = init_filters(size=[self.k, self.k, self.f1, self.f2], init='glorot_uniform')
         self.f = tf.Variable(f_np, dtype=tf.float32)
+        self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
+        self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
 
     def train(self, x):
         conv = tf.nn.conv2d(x, self.f, [1,1,1,1], 'VALID')
-        return conv
+        mean, var = tf.nn.moments(conv, axes=[0,1,2])
+        bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)
+        return bn 
     
     def get_weights(self):
         weights_dict = {}
-        weights_dict[self.weight_id] = {'f': self.f}
+        weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
         return weights_dict
 
     def get_params(self):
         if self.train_flag:
-            return [self.f]
+            return [self.f, self.b, self.g]
         else:
             return []
 
