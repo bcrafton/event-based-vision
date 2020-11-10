@@ -30,10 +30,7 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
         video = PSEELoader(filename)
         box_video = PSEELoader(filename.replace('_td.dat', '_bbox.npy'))
 
-        xs = []
-        ys = []
-        ts = []
-        ps = []
+        xs = []; ys = []; ts = []; ps = []
         while not video.done:
 
             events = video.load_delta_t(delta_t)
@@ -61,36 +58,30 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
             y = events['y']
             t = events['ts']
             p = events['p']
-            # print (np.shape(x))
+
+            xs.append(x)
+            ys.append(y)
+            ts.append(t)
+            ps.append(p)
 
             if len(boxes):
-                xs.append(x)
-                ys.append(y)
-                ts.append(t)
-                ps.append(p)
+                xs = xs[-12:]
+                ys = ys[-12:]
+                ts = ts[-12:]
+                ps = ps[-12:]
 
-        xs = xs[-12:]
-        ys = ys[-12:]
-        ts = ts[-12:]
-        ps = ps[-12:]
+                if len(xs) == 12:
+                    '''
+                    xs = np.concatenate(xs)
+                    ys = np.concatenate(ys)
+                    ts = np.concatenate(ts)
+                    ps = np.concatenate(ps)
+                    '''
 
-        if len(xs) == 12:
-            '''
-            print (np.shape(xs))
-            print (np.shape(ys))
-            print (np.shape(ts))
-            print (np.shape(ps))
-            print ()
-            '''
-
-            xs = np.concatenate(xs)
-            ys = np.concatenate(ys)
-            ts = np.concatenate(ts)
-            ps = np.concatenate(ps)
-
-            data = {'x': xs, 'y': ys, 't': ts, 'p': ps}
-            np.save('./data/' + str(counter), data)
-            counter += 1
+                    data = {'x': xs, 'y': ys, 't': ts, 'p': ps}
+                    np.save('./data/' + str(counter), data)
+                    counter += 1
+                    xs = []; ys = []; ts = []; ps = []
 
 ###########################################################
 
