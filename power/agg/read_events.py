@@ -22,8 +22,9 @@ from src.io.psee_loader import PSEELoader
 
 def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
-    frame = np.zeros((240, 304, 3), dtype=np.uint8)
-    
+    # frame = np.zeros((240, 304, 3), dtype=np.uint8)
+
+    counter = 0
     for filename in td_files:
 
         video = PSEELoader(filename)
@@ -68,18 +69,28 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                 ts.append(t)
                 ps.append(p)
 
-        xs = np.concatenate(xs)
-        ys = np.concatenate(ys)
-        ts = np.concatenate(ts)
-        ps = np.concatenate(ps)
+        xs = xs[-12:]
+        ys = ys[-12:]
+        ts = ts[-12:]
+        ps = ps[-12:]
 
-        '''
-        print (np.shape(xs))
-        print (np.shape(ys))
-        print (np.shape(ts))
-        print (np.shape(ps))
-        print ()
-        '''
+        if len(xs) == 12:
+            '''
+            print (np.shape(xs))
+            print (np.shape(ys))
+            print (np.shape(ts))
+            print (np.shape(ps))
+            print ()
+            '''
+
+            xs = np.concatenate(xs)
+            ys = np.concatenate(ys)
+            ts = np.concatenate(ts)
+            ps = np.concatenate(ps)
+
+            data = {'x': xs, 'y': ys, 't': ts, 'p': ps}
+            np.save('./data/' + str(counter), data)
+            counter += 1
 
 ###########################################################
 
