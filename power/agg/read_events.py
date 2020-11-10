@@ -24,16 +24,19 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
     frame = np.zeros((240, 304, 3), dtype=np.uint8)
     
-    for video_idx in range(len(td_files)):
-        print (video_idx)
-    
-        video = PSEELoader(td_files[video_idx])
-        # box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
+    for filename in td_files:
 
+        video = PSEELoader(filename)
+        box_video = PSEELoader(filename.replace('_td.dat', '_bbox.npy'))
+
+        xs = []
+        ys = []
+        ts = []
+        ps = []
         while not video.done:
 
             events = video.load_delta_t(delta_t)
-            # boxes = box_video.load_delta_t(delta_t)
+            boxes = box_video.load_delta_t(delta_t)
 
             # frame = vis.make_binary_histo(events, img=frame, width=304, height=240)
             # plt.imshow(frame)
@@ -58,6 +61,25 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
             t = events['ts']
             p = events['p']
             # print (np.shape(x))
+
+            if len(boxes):
+                xs.append(x)
+                ys.append(y)
+                ts.append(t)
+                ps.append(p)
+
+        xs = np.concatenate(xs)
+        ys = np.concatenate(ys)
+        ts = np.concatenate(ts)
+        ps = np.concatenate(ps)
+
+        '''
+        print (np.shape(xs))
+        print (np.shape(ys))
+        print (np.shape(ts))
+        print (np.shape(ps))
+        print ()
+        '''
 
 ###########################################################
 
