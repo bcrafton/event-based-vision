@@ -1,0 +1,300 @@
+Event data  : ./data/550.npy
+# frames temporally stacked  : 12
+cache size  : 16384
+Average number of evictions : 4.932839083072511
+hits: 295821
+misses: 57191
+Energy due to SRAM accesses : 295821 femtojoules
+Energy due to DRAM accesses : 686292 femtojoules
+Total energy utilization of frame aggregator: 982113 femtojoules
+
+################################################
+
+Event data  : ./data/551.npy
+# frames temporally stacked  : 12
+cache size  : 16384
+Average number of evictions : 5.314291679716045
+hits: 278131
+misses: 47895
+Energy due to SRAM accesses : 278131 femtojoules
+Energy due to DRAM accesses : 574740 femtojoules
+Total energy utilization of frame aggregator: 852871 femtojoules
+
+################################################
+
+Event data  : ./data/552.npy
+# frames temporally stacked  : 12
+cache size  : 16384
+Average number of evictions : 5.368892410382002
+hits: 248900
+misses: 41649
+Energy due to SRAM accesses : 248900 femtojoules
+Energy due to DRAM accesses : 499788 femtojoules
+Total energy utilization of frame aggregator: 748688 femtojoules
+
+################################################
+
+Event data  : ./data/553.npy
+# frames temporally stacked  : 12
+cache size  : 16384
+Average number of evictions : 5.5980492941854925
+hits: 259144
+misses: 39883
+Energy due to SRAM accesses : 259144 femtojoules
+Energy due to DRAM accesses : 478596 femtojoules
+Total energy utilization of frame aggregator: 737740 femtojoules
+
+################################################
+
+Event data  : ./data/554.npy
+# frames temporally stacked  : 12
+cache size  : 16384
+Average number of evictions : 5.719082782743879
+hits: 260019
+misses: 38595
+Energy due to SRAM accesses : 260019 femtojoules
+Energy due to DRAM accesses : 463140 femtojoules
+Total energy utilization of frame aggregator: 723159 femtojoules
+
+################################################
+
+Event data  : ./data/550.npy
+# frames temporally stacked  : 8
+cache size  : 16384
+Average number of evictions : 4.657492615314701
+hits: 198578
+misses: 35208
+Energy due to SRAM accesses : 198578 femtojoules
+Energy due to DRAM accesses : 422496 femtojoules
+Total energy utilization of frame aggregator: 621074 femtojoules
+
+################################################
+
+Event data  : ./data/551.npy
+# frames temporally stacked  : 8
+cache size  : 16384
+Average number of evictions : 5.2860862019091694
+hits: 189651
+misses: 27656
+Energy due to SRAM accesses : 189651 femtojoules
+Energy due to DRAM accesses : 331872 femtojoules
+Total energy utilization of frame aggregator: 521523 femtojoules
+
+################################################
+
+Event data  : ./data/552.npy
+# frames temporally stacked  : 8
+cache size  : 16384
+Average number of evictions : 5.479128614068695
+hits: 167443
+misses: 22447
+Energy due to SRAM accesses : 167443 femtojoules
+Energy due to DRAM accesses : 269364 femtojoules
+Total energy utilization of frame aggregator: 436807 femtojoules
+
+################################################
+
+Event data  : ./data/553.npy
+# frames temporally stacked  : 8
+cache size  : 16384
+Average number of evictions : 5.553033373868396
+hits: 176265
+misses: 22203
+Energy due to SRAM accesses : 176265 femtojoules
+Energy due to DRAM accesses : 266436 femtojoules
+Total energy utilization of frame aggregator: 442701 femtojoules
+
+################################################
+
+Event data  : ./data/554.npy
+# frames temporally stacked  : 8
+cache size  : 16384
+Average number of evictions : 5.749363027271869
+hits: 174687
+misses: 21194
+Energy due to SRAM accesses : 174687 femtojoules
+Energy due to DRAM accesses : 254328 femtojoules
+Total energy utilization of frame aggregator: 429015 femtojoules
+
+################################################
+
+Event data  : ./data/550.npy
+# frames temporally stacked  : 5
+cache size  : 16384
+Average number of evictions : 4.657095747100295
+hits: 122942
+misses: 17588
+Energy due to SRAM accesses : 122942 femtojoules
+Energy due to DRAM accesses : 211056 femtojoules
+Total energy utilization of frame aggregator: 333998 femtojoules
+
+################################################
+
+Event data  : ./data/551.npy
+# frames temporally stacked  : 5
+cache size  : 16384
+Average number of evictions : 5.300656940534084
+hits: 119369
+misses: 11721
+Energy due to SRAM accesses : 119369 femtojoules
+Energy due to DRAM accesses : 140652 femtojoules
+Total energy utilization of frame aggregator: 260021 femtojoules
+
+################################################
+
+Event data  : ./data/552.npy
+# frames temporally stacked  : 5
+cache size  : 16384
+Average number of evictions : 5.999747634069401
+hits: 106539
+misses: 7925
+Energy due to SRAM accesses : 106539 femtojoules
+Energy due to DRAM accesses : 95100 femtojoules
+Total energy utilization of frame aggregator: 201639 femtojoules
+
+################################################
+
+Event data  : ./data/553.npy
+# frames temporally stacked  : 5
+cache size  : 16384
+Average number of evictions : 5.41684511063526
+hits: 109166
+misses: 8406
+Energy due to SRAM accesses : 109166 femtojoules
+Energy due to DRAM accesses : 100872 femtojoules
+Total energy utilization of frame aggregator: 210038 femtojoules
+
+################################################
+
+Event data  : ./data/554.npy
+# frames temporally stacked  : 5
+cache size  : 16384
+Average number of evictions : 6.0727172565762295
+hits: 108600
+misses: 7261
+Energy due to SRAM accesses : 108600 femtojoules
+Energy due to DRAM accesses : 87132 femtojoules
+Total energy utilization of frame aggregator: 195732 femtojoules
+
+################################################
+
+Event data  : ./data/550.npy
+# frames temporally stacked  : 2
+cache size  : 16384
+Average number of evictions : nan
+hits: 50098
+misses: 0
+Energy due to SRAM accesses : 50098 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 50098 femtojoules
+
+################################################
+
+Event data  : ./data/551.npy
+# frames temporally stacked  : 2
+cache size  : 16384
+Average number of evictions : nan
+hits: 45641
+misses: 0
+Energy due to SRAM accesses : 45641 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 45641 femtojoules
+
+################################################
+
+Event data  : ./data/552.npy
+# frames temporally stacked  : 2
+cache size  : 16384
+Average number of evictions : nan
+hits: 45118
+misses: 0
+Energy due to SRAM accesses : 45118 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 45118 femtojoules
+
+################################################
+
+Event data  : ./data/553.npy
+# frames temporally stacked  : 2
+cache size  : 16384
+Average number of evictions : nan
+hits: 42326
+misses: 0
+Energy due to SRAM accesses : 42326 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 42326 femtojoules
+
+################################################
+
+Event data  : ./data/554.npy
+# frames temporally stacked  : 2
+cache size  : 16384
+Average number of evictions : nan
+hits: 43374
+misses: 0
+Energy due to SRAM accesses : 43374 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 43374 femtojoules
+
+################################################
+
+Event data  : ./data/550.npy
+# frames temporally stacked  : 1
+cache size  : 16384
+Average number of evictions : nan
+hits: 24766
+misses: 0
+Energy due to SRAM accesses : 24766 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 24766 femtojoules
+
+################################################
+
+Event data  : ./data/551.npy
+# frames temporally stacked  : 1
+cache size  : 16384
+Average number of evictions : nan
+hits: 21882
+misses: 0
+Energy due to SRAM accesses : 21882 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 21882 femtojoules
+
+################################################
+
+Event data  : ./data/552.npy
+# frames temporally stacked  : 1
+cache size  : 16384
+Average number of evictions : nan
+hits: 22892
+misses: 0
+Energy due to SRAM accesses : 22892 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 22892 femtojoules
+
+################################################
+
+Event data  : ./data/553.npy
+# frames temporally stacked  : 1
+cache size  : 16384
+Average number of evictions : nan
+hits: 20599
+misses: 0
+Energy due to SRAM accesses : 20599 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 20599 femtojoules
+
+################################################
+
+Event data  : ./data/554.npy
+# frames temporally stacked  : 1
+cache size  : 16384
+Average number of evictions : nan
+hits: 21600
+misses: 0
+Energy due to SRAM accesses : 21600 femtojoules
+Energy due to DRAM accesses : 0 femtojoules
+Total energy utilization of frame aggregator: 21600 femtojoules
+
+################################################
+

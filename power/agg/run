@@ -1,0 +1,31 @@
+python3 test.py ./data/550.npy > out.txt
+python3 test.py ./data/551.npy >> out.txt
+python3 test.py ./data/552.npy >> out.txt
+python3 test.py ./data/553.npy >> out.txt
+python3 test.py ./data/554.npy >> out.txt
+
+
+python3 test.py ./data/550.npy -t 8 >> out.txt
+python3 test.py ./data/551.npy -t 8 >> out.txt
+python3 test.py ./data/552.npy -t 8 >> out.txt
+python3 test.py ./data/553.npy -t 8 >> out.txt
+python3 test.py ./data/554.npy -t 8 >> out.txt
+
+python3 test.py ./data/550.npy -t 5 >> out.txt
+python3 test.py ./data/551.npy -t 5 >> out.txt
+python3 test.py ./data/552.npy -t 5 >> out.txt
+python3 test.py ./data/553.npy -t 5 >> out.txt
+python3 test.py ./data/554.npy -t 5 >> out.txt
+
+
+python3 test.py ./data/550.npy -t 2 >> out.txt
+python3 test.py ./data/551.npy -t 2 >> out.txt
+python3 test.py ./data/552.npy -t 2 >> out.txt
+python3 test.py ./data/553.npy -t 2 >> out.txt
+python3 test.py ./data/554.npy -t 2 >> out.txt
+
+python3 test.py ./data/550.npy -t 1 >> out.txt
+python3 test.py ./data/551.npy -t 1 >> out.txt
+python3 test.py ./data/552.npy -t 1 >> out.txt
+python3 test.py ./data/553.npy -t 1 >> out.txt
+python3 test.py ./data/554.npy -t 1 >> out.txt
