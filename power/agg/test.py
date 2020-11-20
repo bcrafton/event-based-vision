@@ -58,19 +58,26 @@ print ('misses: {}'.format(misses))
 
 ################################################
 
-#femto joules numbers obtained from MDAT paper
-enrgy_per_sram = 1
-enrgy_per_dram = 10
+def getEnrgy(enrgy_per_dram=10,enrgy_per_sram=1): 
+    #femto joules numbers obtained from MDAT paper
+    # enrgy_per_sram = 1
+    # enrgy_per_dram = 10
+    
+    # assumed direct indexed cache and neglected the energy of the interconnect
+    # on a single miss read sram saw miss read dram and then wrote back to sram
+    total_enrgy_misses = misses *(2*enrgy_per_sram + enrgy_per_dram) 
+    total_enrgy_hits = hits * enrgy_per_sram
+    total_enrgy = total_enrgy_hits + total_enrgy_misses
+    
+    print("Energy due to SRAM accesses : {} femtojoules".format(total_enrgy_hits))
+    print("Energy due to DRAM accesses : {} femtojoules".format(total_enrgy_misses))
+    print("Total energy utilization of frame aggregator: {} femtojoules\n".format(total_enrgy))
+    print("################################################\n")
 
-# assumed direct indexed cache and neglected the energy of the interconnect
-# on a single miss read sram saw miss read dram and then wrote back to sram
-total_enrgy_misses = misses *(2*enrgy_per_sram + enrgy_per_dram) 
-total_enrgy_hits = hits * enrgy_per_sram
-total_enrgy = total_enrgy_hits + total_enrgy_misses
+    enrgy_dict = {'dram': total_enrgy_misses,'sram':total_enrgy_hits,'total':total_enrgy}
 
-print("Energy due to SRAM accesses : {} femtojoules".format(total_enrgy_hits))
-print("Energy due to DRAM accesses : {} femtojoules".format(total_enrgy_misses))
-print("Total energy utilization of frame aggregator: {} femtojoules\n".format(total_enrgy))
-print("################################################\n")
+    return enrgy_dict
 
 ################################################
+
+getEnrgy()

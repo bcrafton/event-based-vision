@@ -6,31 +6,23 @@ import tensorflow as tf
 
 from bc_utils.init_tensor import init_filters
 from bc_utils.init_tensor import init_matrix
+from bc_utils.conv_utils import conv_output_length
 
 #############
 
 class model:
     def __init__(self, layers):
         self.layers = layers
+        self.macs = 0
         
-    def train(self, x):
+    def forward(self, x):
         y = x
         for layer in self.layers:
-            y = layer.train(y)
-        return y
+            macs,y = layer.forward(y)
+            # print("Macs : {}".format(macs))
+            self.macs += macs
+        return self.macs,y
     
-    def get_weights(self):
-        weights_dict = {}
-        for layer in self.layers:
-            weights_dict.update(layer.get_weights())
-        return weights_dict
-        
-    def get_params(self):
-        params = []
-        for layer in self.layers:
-            params.extend(layer.get_params())
-        return params
-        
 #############
 
 class layer:
@@ -40,11 +32,9 @@ class layer:
     def __init__(self):
         assert(False)
         
-    def train(self, x):        
+    def forward(self, x):        
         assert(False)
         
-    def get_weights(self):
-        assert(False)
         
 #############
         
@@ -72,25 +62,15 @@ class conv_block(layer):
             self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
             self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
 
-    def train(self, x):
-        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
-        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
-        mean, var = tf.nn.moments(conv, axes=[0,1,2])
-        bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)        
-        if self.relu: out = tf.nn.relu(bn)
-        else:         out = bn
-        return out 
-    
-    def get_weights(self):
-        weights_dict = {}
-        weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
-        return weights_dict
-
-    def get_params(self):
-        if self.train_flag:
-            return [self.f, self.b, self.g]
-        else:
-            return []
+    def forward(self, x):
+        h,w,c = x
+        h = conv_output_length(input_length=h+2*self.pad,filter_size=self.k, padding='valid', stride=self.p)
+        w = conv_output_length(input_length=w+2*self.pad,filter_size=self.k, padding='valid', stride=self.p)
+        c = self.f2
+        out = (h,w,c)
+        macs = self.k * self.k * h * w * self.f1 * self.f2
+        print("Layer ID : {} size : {} number of macs : {}".format(self.layer_id,out,macs))
+        return macs,out 
 
 #############
 
@@ -107,32 +87,16 @@ class res_block1(layer):
         self.layer_id = layer.layer_id
         layer.layer_id += 1
         
-    def train(self, x):
-        y1 = self.conv1.train(x)
-        y2 = self.conv2.train(y1)
-        y3 = tf.nn.relu(x + y2)
-        return y3
-
-    def get_weights(self):
-        weights_dict = {}
-        weights1 = self.conv1.get_weights()
-        weights2 = self.conv2.get_weights()
-        
-        weights_dict.update(weights1)
-        weights_dict.update(weights2)
-        return weights_dict
-        
-    def get_params(self):
-        params = []
-        params.extend(self.conv1.get_params())
-        params.extend(self.conv2.get_params())
-        return params
-
+    def forward(self, x):
+        mac1,y1 = self.conv1.forward(x)
+        mac2,y2 = self.conv2.forward(y1)
+        macs= mac1 + mac2
+        return macs,y2
 #############
 
 class res_block2(layer):
     def __init__(self, f1, f2, p, weights=None, train=True):
-
+        self.total_macs = 0
         self.f1 = f1
         self.f2 = f2
         self.p = p
@@ -144,35 +108,19 @@ class res_block2(layer):
         self.layer_id = layer.layer_id
         layer.layer_id += 1
 
-    def train(self, x):
-        y1 = self.conv1.train(x)
-        y2 = self.conv2.train(y1)
-        y3 = self.conv3.train(x)
-        y4 = tf.nn.relu(y2 + y3)
-        return y4
-
-    def get_weights(self):
-        weights_dict = {}
-        weights1 = self.conv1.get_weights()
-        weights2 = self.conv2.get_weights()
-        weights3 = self.conv3.get_weights()
-        
-        weights_dict.update(weights1)
-        weights_dict.update(weights2)
-        weights_dict.update(weights3)
-        return weights_dict
-
-    def get_params(self):
-        params = []
-        params.extend(self.conv1.get_params())
-        params.extend(self.conv2.get_params())
-        params.extend(self.conv3.get_params())
-        return params
+    def forward(self, x):
+        mac1,y1 = self.conv1.forward(x)
+        mac2,y2 = self.conv2.forward(y1)
+        mac3, y3 = self.conv3.forward(x)
+        macs = mac1+ mac2 + mac3
+        print("Layer ID : {} size : {}".format(self.layer_id,y3))
+        return macs,y3
 
 #############
 
 class dense_block(layer):
     def __init__(self, isize, osize, weights=None, train=True, relu=True, dropout=False):
+        self.total_macs = 0
         self.weight_id = layer.weight_id
         layer.weight_id += 1
         self.layer_id = layer.layer_id
@@ -193,69 +141,54 @@ class dense_block(layer):
             self.w = tf.Variable(w_np, dtype=tf.float32)
             self.b = tf.Variable(np.zeros(shape=self.osize), dtype=tf.float32)
 
-    def train(self, x):
-        x = tf.reshape(x, (-1, self.isize))
-        fc = tf.matmul(x, self.w) + self.b
-
-        if self.relu: out = tf.nn.relu(fc)
-        else:         out = fc
-
-        if self.dropout: out = tf.nn.dropout(out, 0.5)
-
-        return out
-
-    def get_weights(self):
-        weights_dict = {}
-        weights_dict[self.weight_id] = {'w': self.w, 'b': self.b}
-        return weights_dict
-        
-    def get_params(self):
-        if self.train_flag:
-            return [self.w, self.b]
-        else:
-            return []
+    def forward(self, x):
+        assert(np.prod(x)== self.isize)
+        out = self.osize
+        macs = out * self.isize
+        print("Layer ID : {} size : {} number of macs : {}".format(self.layer_id,out,macs))
+        return macs,out
 
 #############
 
 class avg_pool(layer):
     def __init__(self, s, p):
+        self.total_macs = 0
         self.layer_id = layer.layer_id
         layer.layer_id += 1
     
         self.s = s
         self.p = p
         
-    def train(self, x):        
-        pool = tf.nn.avg_pool(x, ksize=self.p, strides=self.s, padding="SAME")
-        return pool
-    
-    def get_weights(self):    
-        weights_dict = {}
-        return weights_dict
-        
-    def get_params(self):
-        return []
+    def forward(self, x):
+        h,w,c = x
+        h = conv_output_length(input_length=h,filter_size=self.p, padding='same', stride=self.s)
+        w = conv_output_length(input_length=w,filter_size=self.p, padding='same', stride=self.s)
+        c = c
+        out = (h,w,c)
+        print("Layer ID : {} size : {}".format(self.layer_id,out))        
+        return 0,out
 
 #############
 
 class max_pool(layer):
     def __init__(self, s, p):
+        self.total_macs = 0
         self.layer_id = layer.layer_id
         layer.layer_id += 1
     
         self.s = s
         self.p = p
         
-    def train(self, x):        
-        pool = tf.nn.max_pool(x, ksize=self.p, strides=self.s, padding="SAME")
-        return pool
+    def forward(self, x):
+        h,w,c = x
+        h = conv_output_length(input_length=h,filter_size=self.p, padding='same', stride=self.s)
+        w = conv_output_length(input_length=w,filter_size=self.p, padding='same', stride=self.s)
+        c = c
+        out = (h,w,c)
+        print("Layer ID : {} size : {}".format(self.layer_id,out))        
+        return 0,out
     
-    def get_weights(self):    
-        weights_dict = {}
-        return weights_dict
 
-    def get_params(self):
-        return []
 
 
 
