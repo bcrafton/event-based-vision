@@ -7,7 +7,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=8)
+parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
@@ -98,7 +98,6 @@ from keras.layers import MaxPooling2D
 from keras.layers import Dropout
 from keras.layers import Dense
 from keras.layers import Flatten
-from keras.layers import ConvLSTM2D
 
 '''
 def model(x):
@@ -130,12 +129,9 @@ def model(x):
 
 model = Sequential()
 
-# https://medium.com/neuronio/an-introduction-to-convlstm-55c9025563a7
-model.add( ConvLSTM2D(32, (3, 3), padding='same', strides=3, input_shape=(12, 240, 288, 1)) )
-
 # 240, 288
-# model.add( Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(240, 288, 12)) )
-# model.add( MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) )
+model.add( Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(240, 288, 12)) )
+model.add( MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) )
 
 # 80, 96
 model.add( Conv2D(32, (3, 3), activation='relu', padding='same') )
@@ -179,9 +175,6 @@ def extract_fn(record):
     image = tf.io.decode_raw(sample['image_raw'], tf.uint8)
     image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
     image = tf.reshape(image, (240, 288, 12))
-    
-    image = tf.transpose(image, (2, 0, 1))
-    image = tf.reshape(image, (12, 240, 288, 1))
 
     return [image, label]
 
