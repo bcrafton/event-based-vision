@@ -3,7 +3,7 @@
 # python train.py --epochs 100 --gpu 2 --lr 0.01  &
 # python train.py --epochs 100 --gpu 3 --lr 0.003 &
 
-python train.py --epochs 15 --gpu 1 --lr 0.01 &
-python train.py --epochs 15 --gpu 2 --lr 0.003 &
-python train.py --epochs 15 --gpu 3 --lr 0.001 &
+nohup python train.py --epochs 15 --gpu 1 --lr 0.03 &
+nohup python train.py --epochs 15 --gpu 2 --lr 0.01 &
+nohup python train.py --epochs 15 --gpu 3 --lr 0.003 &
 

@@ -18,6 +18,10 @@ import matplotlib.pyplot as plt
 from src.visualize import vis_utils as vis
 from src.io.psee_loader import PSEELoader
 
+import multiprocessing
+from multiprocessing import Process
+from multiprocessing import Pool
+
 ##############################################
 
 def _int64_feature(value):
@@ -124,7 +128,7 @@ def play_files_parallel(path, td_files, tid, delta_t=50000, skip=0):
                     ###################################
 
                     if np.shape(frames_cp) == (240, 288, 12):
-                        # img = np.mean(frames_cp, axis=-1)
+                        img = np.mean(frames_cp, axis=-1)
                         img = img - np.min(img)
                         std = np.std(img)
                         if std > 5:
@@ -175,11 +179,11 @@ for record in records:
 
 threads = []
 for tid in range(8):
-    per = np.ceil(len(records) / 8)
+    per = int(np.ceil(len(records) / 8))
     start = per * tid
     end = min(start + per, len(records)) 
     
-    args = ('./train', records[start:end], tid=tid, skip=0, delta_t=20000)
+    args = ('./train', records[start:end], tid, 50000, 0)
     t = multiprocessing.Process(target=play_files_parallel, args=args)
     threads.append(t)
     t.start()
