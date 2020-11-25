@@ -101,7 +101,6 @@ from keras.layers import Flatten
 from keras.layers import ConvLSTM2D
 from keras.layers import ReLU
 from keras.layers import BatchNormalization
-from keras.layers import Add
 
 '''
 def model(x):
@@ -131,26 +130,9 @@ def model(x):
 
 ####################################
 
-def conv_block(x, k, f, s, relu=True):
+def conv_block(x, k, f, s):
     x = Conv2D(f, (k, k), padding='same', strides=s) (x)
     x = BatchNormalization() (x)
-    if relu: x = ReLU() (x)
-    return x
-
-####################################
-
-def res_block1(x, f):
-    y1 = conv_block(x,  3, f, 1)
-    y2 = conv_block(y1, 3, f, 1, relu=False)
-    x = Add()([x, y2])
-    x = ReLU() (x)
-    return x
-
-def res_block2(x, f):
-    y1 = conv_block(x,  3, f, 2)
-    y2 = conv_block(y1, 3, f, 1, relu=False)
-    y3 = conv_block(x,  1, f, 2, relu=False)
-    x = Add()([y2, y3])
     x = ReLU() (x)
     return x
 
@@ -169,24 +151,24 @@ x = ConvLSTM2D(16, (3, 3), padding='same', strides=3, return_sequences=True, inp
 x = ConvLSTM2D(32, (3, 3), padding='same', strides=1, return_sequences=False) (x)
 
 # 80, 96
-x = res_block2(x, 64)
-x = res_block1(x, 64)
+x = conv_block(x, 3, 64, 2)
+x = conv_block(x, 3, 64, 1)
 
 # 40, 48
-x = res_block2(x, 128)
-x = res_block1(x, 128)
+x = conv_block(x, 3, 128, 2)
+x = conv_block(x, 3, 128, 1)
 
 # 20, 24
-x = res_block2(x, 256)
-x = res_block1(x, 256)
+x = conv_block(x, 3, 256, 2)
+x = conv_block(x, 3, 256, 1)
 
 # 10, 12
-x = res_block2(x, 512)
-x = res_block1(x, 512)
+x = conv_block(x, 3, 256, 2)
+x = conv_block(x, 3, 512, 1)
 
 # 5, 6
 x = Flatten() (x)
-x = Dense(units=2048, activation='relu') (x)
+x = Dense(units=512, activation='relu') (x)
 x = Dense(units=5*6*14) (x)
 
 ####################################
