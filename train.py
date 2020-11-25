@@ -99,6 +99,8 @@ from keras.layers import Dropout
 from keras.layers import Dense
 from keras.layers import Flatten
 from keras.layers import ConvLSTM2D
+from keras.layers import ReLU
+from keras.layers import BatchNormalization
 
 '''
 def model(x):
@@ -128,38 +130,77 @@ def model(x):
 
 ####################################
 
-model = Sequential()
+def conv_block(x, k, f, s):
+    x = Conv2D(f, (k, k), padding='same', strides=s) (x)
+    x = BatchNormalization() (x)
+    x = ReLU() (x)
+    return x
+
+####################################
 
 # https://medium.com/neuronio/an-introduction-to-convlstm-55c9025563a7
-model.add( ConvLSTM2D(32, (3, 3), padding='same', strides=3, input_shape=(12, 240, 288, 1)) )
+
+####################################
+
+inputs = tf.keras.layers.Input([12, 240, 288, 1])
+
+# 240, 288
+x = ConvLSTM2D(16, (3, 3), padding='same', strides=3, return_sequences=True, input_shape=(12, 240, 288, 1)) (inputs)
+
+# 80, 96
+x = ConvLSTM2D(32, (3, 3), padding='same', strides=1, return_sequences=False) (x)
+
+# 80, 96
+x = conv_block(x, 3, 64, 2)
+x = conv_block(x, 3, 64, 1)
+
+# 40, 48
+x = conv_block(x, 3, 128, 2)
+x = conv_block(x, 3, 128, 1)
+
+# 20, 24
+x = conv_block(x, 3, 256, 2)
+x = conv_block(x, 3, 256, 1)
+
+# 10, 12
+x = conv_block(x, 3, 256, 2)
+x = conv_block(x, 3, 512, 1)
+
+# 5, 6
+x = Flatten() (x)
+x = Dense(units=512, activation='relu') (x)
+x = Dense(units=5*6*14) (x)
+
+####################################
 
 # 240, 288
 # model.add( Conv2D(32, (3, 3), activation='relu', padding='same', input_shape=(240, 288, 12)) )
 # model.add( MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) )
 
 # 80, 96
-model.add( Conv2D(32, (3, 3), activation='relu', padding='same') )
-model.add( MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) )
+# x = Conv2D(64, (3, 3), activation='relu', padding='same') (x)
+# x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
 # 40, 48
-model.add( Conv2D(32, (3, 3), activation='relu', padding='same') )
-model.add( MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) )
+# x = Conv2D(32, (3, 3), activation='relu', padding='same') (x)
+# x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
 # 20, 24
-model.add( Conv2D(32, (3, 3), activation='relu', padding='same') )
-model.add( MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) )
+# x = Conv2D(32, (3, 3), activation='relu', padding='same') (x)
+# x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
 # 10, 12
-model.add( Conv2D(32, (3, 3), activation='relu', padding='same') )
-model.add( MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) )
+# x = Conv2D(32, (3, 3), activation='relu', padding='same') (x)
+# x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
 # 5, 6
-model.add( Flatten() )
-model.add( Dense(units=512, activation='relu') )
-model.add( Dense(units=5*6*14) )
+# x = Flatten() (x)
+# x = Dense(units=512, activation='relu') (x)
+# x = Dense(units=5*6*14) (x)
 
 ####################################
 
+model = tf.keras.Model(inputs=inputs, outputs=x)
 model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr))
 
 ####################################
@@ -216,7 +257,7 @@ dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 # super elegant.
 # https://keras.io/examples/keras_recipes/tfrecord/
 
-model.fit(dataset, epochs=2)
+model.fit(dataset, epochs=args.epochs)
 
 ####################################
 
