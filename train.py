@@ -7,7 +7,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=8)
+parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
@@ -163,7 +163,7 @@ def res_block2(x, f):
 inputs = tf.keras.layers.Input([12, 240, 288, 1])
 
 # 240, 288
-x = ConvLSTM2D(16, (3, 3), padding='same', strides=3, return_sequences=True, input_shape=(12, 240, 288, 1)) (inputs)
+x = ConvLSTM2D(16, (7, 7), padding='same', strides=3, return_sequences=True, input_shape=(12, 240, 288, 1)) (inputs)
 
 # 80, 96
 x = ConvLSTM2D(32, (3, 3), padding='same', strides=1, return_sequences=False) (x)
@@ -220,6 +220,7 @@ x = Dense(units=5*6*14) (x)
 
 model = tf.keras.Model(inputs=inputs, outputs=x)
 model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr))
+model.summary()
 
 ####################################
 

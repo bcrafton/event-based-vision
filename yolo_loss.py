@@ -73,7 +73,7 @@ def yolo_loss(label, pred):
     # cat    = [4, -1, 7, 7]
 
     # TODO: set back (-1) ... this always results in problems.
-    pred = tf.reshape(pred, [8, 1, 5, 6, 14])
+    pred = tf.reshape(pred, [16, 1, 5, 6, 14])
     obj    = label[:, :, :, :, 4]
     no_obj = label[:, :, :, :, 5]
     cat    = tf.cast(label[:, :, :, :, 6], dtype=tf.int32)
