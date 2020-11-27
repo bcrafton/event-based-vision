@@ -40,8 +40,8 @@ def calc_iou_help(boxA, boxB):
     interArea = tf.maximum(tf.zeros_like(iy), iy) * tf.maximum(tf.zeros_like(ix), ix)
 
     # compute the area of both the prediction and ground-truth rectangles
-    boxAArea = tf.abs(boxA[:,:,:,:,2] * boxA[:,:,:,:,3])
-    boxBArea = tf.abs(boxB[:,:,:,:,2] * boxB[:,:,:,:,3])
+    boxAArea = abs_no_grad(boxA[:,:,:,:,2] * boxA[:,:,:,:,3])
+    boxBArea = abs_no_grad(boxB[:,:,:,:,2] * boxB[:,:,:,:,3])
 
     # compute the intersection over union by taking the intersection
     # area and dividing it by the sum of prediction + ground-truth
@@ -236,9 +236,15 @@ def yolo_loss(label, pred):
     ######################################
 
     # print (yx_loss.numpy(), hw_loss.numpy(), obj_loss.numpy(), no_obj_loss.numpy(), cat_loss.numpy())
-    
     loss = yx_loss + hw_loss + obj_loss + no_obj_loss + cat_loss
-    return loss # , (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss)
+
+    tf.print(tf.math.round(100. * yx_loss     / loss), 
+             tf.math.round(100. * hw_loss     / loss),
+             tf.math.round(100. * obj_loss    / loss),
+             tf.math.round(100. * no_obj_loss / loss),
+             tf.math.round(100. * cat_loss    / loss))
+
+    return loss 
 
 
 

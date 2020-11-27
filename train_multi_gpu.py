@@ -6,8 +6,8 @@ import os
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--epochs', type=int, default=15)
+parser.add_argument('--batch_size', type=int, default=64)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
@@ -25,11 +25,14 @@ import matplotlib.pyplot as plt
 import random
 
 ####################################
-
+'''
 gpus = tf.config.experimental.list_physical_devices('GPU')
 gpu = gpus[args.gpu]
 tf.config.experimental.set_visible_devices(gpu, 'GPU')
 tf.config.experimental.set_memory_growth(gpu, True)
+'''
+
+os.environ["CUDA_VISIBLE_DEVICES"]="0,1"
 
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
@@ -38,6 +41,7 @@ from calc_map import calc_map
 ####################################
 
 load_weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
+# load_weights = np.load('trained_weights.npy', allow_pickle=True).item()
 
 ####################################
 
@@ -51,6 +55,7 @@ from keras.layers import ConvLSTM2D
 from keras.layers import ReLU
 from keras.layers import BatchNormalization
 from keras.layers import Add
+from keras.layers import AveragePooling2D
 
 ####################################
 
@@ -63,7 +68,7 @@ with strategy.scope():
 
     def conv_block(x, k, f, s, relu=True):
         conv = Conv2D(f, (k, k), padding='same', strides=s, use_bias=False) 
-        bn = BatchNormalization()
+        bn = BatchNormalization(epsilon=1e-5)
 
         x = conv (x)
         x = bn (x)
@@ -90,41 +95,43 @@ with strategy.scope():
         x = ReLU() (x)
         return x
 
-    def dense_block(x, n, relu=True):
-        if relu: dense = Dense(units=n, activation='relu')
-        else:    dense = Dense(units=n)
+    def dense_block(x, n, last=False):
+        dense = Dense(units=n)
 
         global layer_id, weights
         weights[layer_id] = (dense,)
         layer_id += 1
 
         x = dense (x)
+        if not last:
+            x = ReLU() (x)
+            x = Dropout(0.5) (x)
         return x
 
     inputs = tf.keras.layers.Input([240, 288, 12])
 
     x = conv_block(inputs, 7, 64, 1)
-    x = MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) (x)
+    x = AveragePooling2D(pool_size=(3, 3), padding='same', strides=3) (x)
 
     # 80, 96
     x = res_block1(x, 64)
     x = res_block1(x, 64)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 40, 48
     x = res_block2(x, 128)
     x = res_block1(x, 128)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 20, 24
     x = res_block2(x, 256)
     x = res_block1(x, 256)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 10, 12
     x = res_block2(x, 512)
     x = res_block1(x, 512)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 5, 6
     x = res_block2(x, 512)
@@ -132,8 +139,8 @@ with strategy.scope():
 
     # 5, 6
     x = Flatten() (x)
-    x = dense_block (x, 2048) # dropout
-    x = dense_block (x, 5*6*14, relu=False)
+    x = dense_block (x, 2048)
+    x = dense_block (x, 5*6*14, last=True)
 
     model = tf.keras.Model(inputs=inputs, outputs=x)
     model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr))
@@ -144,16 +151,16 @@ with strategy.scope():
             conv, bn = weights[layer]
 
             f = load_weights[layer]['f'].numpy()
-            conv.set_weights([f])
+            # conv.set_weights([f])
 
             g = load_weights[layer]['g'].numpy()
             b = load_weights[layer]['b'].numpy()
-            bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
+            # bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
         else:
             dense = weights[layer][0]
             w = load_weights[layer]['w'].numpy()
             b = load_weights[layer]['b'].numpy()
-            dense.set_weights([w, b])
+            # dense.set_weights([w, b])
 
 ####################################
 
@@ -212,6 +219,28 @@ dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 model.fit(dataset, epochs=args.epochs)
 
 ####################################
+
+save_weights = {}
+
+for layer in weights.keys():
+    if len(weights[layer]) > 1:
+        conv, bn = weights[layer]
+        (f,) = conv.get_weights()
+        (g, b, _, _) = bn.get_weights()
+        save_weights[layer] = {'f': f, 'g': g, 'b': b}
+    else:
+        (dense,) = weights[layer]
+        (w, b) = dense.get_weights()
+        save_weights[layer] = {'w': w, 'b': b}
+
+np.save('trained_weights', save_weights)
+
+####################################
+
+
+
+
+
 
 
 
