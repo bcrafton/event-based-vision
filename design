@@ -178,16 +178,27 @@ rerunning from checkpoint ...
 
 ------
 
+(1)
+AHHH - so loss issue def because of different padding used between the 2 models.
+or atleast thats part of it.
 
+(2) 
+we can run multi gpu training with keras which is sick.
 
+(3)
+https://github.com/FMsunyh/keras-yolo/blob/master/core/layers/_losses.py
+trying to figure out why keras cannot train our model.
+loss function autograd problems ? 
 
+0.145669 (7 2 57 31 1)
+> need to get what they usually look like 
+> something like this
 
+what about those errors right at the start of the program ? 
+experimental_relax_shapes=True or something ??
 
-
-
-
-
-
+stop using multi gpu ? 
+> wud hopefully make it easier to debug.
 
 
 
