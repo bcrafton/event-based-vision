@@ -55,108 +55,104 @@ from keras.layers import AveragePooling2D
 
 ####################################
 
-strategy = tf.distribute.MirroredStrategy()
-print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
-with strategy.scope():
+layer_id = 0
+weights = {}
 
-    layer_id = 0
-    weights = {}
+def conv_block(x, k, f, s, relu=True):
+    conv = Conv2D(f, (k, k), padding='same', strides=s, use_bias=False) 
+    bn = BatchNormalization(epsilon=1e-5)
 
-    def conv_block(x, k, f, s, relu=True):
-        conv = Conv2D(f, (k, k), padding='same', strides=s, use_bias=False) 
-        bn = BatchNormalization(epsilon=1e-5)
+    x = conv (x)
+    x = bn (x)
 
-        x = conv (x)
-        x = bn (x)
+    global layer_id, weights
+    weights[layer_id] = (conv, bn)
+    layer_id += 1
 
-        global layer_id, weights
-        weights[layer_id] = (conv, bn)
-        layer_id += 1
+    if relu: x = ReLU() (x)
+    return x
 
-        if relu: x = ReLU() (x)
-        return x
+def res_block1(x, f):
+    y1 = conv_block(x,  3, f, 1)
+    y2 = conv_block(y1, 3, f, 1, relu=False)
+    x = Add()([x, y2])
+    x = ReLU() (x)
+    return x
 
-    def res_block1(x, f):
-        y1 = conv_block(x,  3, f, 1)
-        y2 = conv_block(y1, 3, f, 1, relu=False)
-        x = Add()([x, y2])
+def res_block2(x, f):
+    y1 = conv_block(x,  3, f, 1)
+    y2 = conv_block(y1, 3, f, 1, relu=False)
+    y3 = conv_block(x,  1, f, 1, relu=False)
+    x = Add()([y2, y3])
+    x = ReLU() (x)
+    return x
+
+def dense_block(x, n, last=False):
+    dense = Dense(units=n)
+
+    global layer_id, weights
+    weights[layer_id] = (dense,)
+    layer_id += 1
+
+    x = dense (x)
+    if not last:
         x = ReLU() (x)
-        return x
+        x = Dropout(0.5) (x)
+    return x
 
-    def res_block2(x, f):
-        y1 = conv_block(x,  3, f, 1)
-        y2 = conv_block(y1, 3, f, 1, relu=False)
-        y3 = conv_block(x,  1, f, 1, relu=False)
-        x = Add()([y2, y3])
-        x = ReLU() (x)
-        return x
+inputs = tf.keras.layers.Input([240, 288, 12])
 
-    def dense_block(x, n, last=False):
-        dense = Dense(units=n)
+x = conv_block(inputs, 7, 64, 1)
+x = MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) (x)
 
-        global layer_id, weights
-        weights[layer_id] = (dense,)
-        layer_id += 1
+# 80, 96
+x = res_block1(x, 64)
+x = res_block1(x, 64)
+x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
-        x = dense (x)
-        if not last:
-            x = ReLU() (x)
-            x = Dropout(0.5) (x)
-        return x
+# 40, 48
+x = res_block2(x, 128)
+x = res_block1(x, 128)
+x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
-    inputs = tf.keras.layers.Input([240, 288, 12])
+# 20, 24
+x = res_block2(x, 256)
+x = res_block1(x, 256)
+x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
-    x = conv_block(inputs, 7, 64, 1)
-    x = MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) (x)
+# 10, 12
+x = res_block2(x, 512)
+x = res_block1(x, 512)
+x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
-    # 80, 96
-    x = res_block1(x, 64)
-    x = res_block1(x, 64)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+# 5, 6
+x = res_block2(x, 512)
+x = res_block1(x, 512)
 
-    # 40, 48
-    x = res_block2(x, 128)
-    x = res_block1(x, 128)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+# 5, 6
+x = Flatten() (x)
+x = dense_block (x, 2048)
+x = dense_block (x, 5*6*14, last=True)
 
-    # 20, 24
-    x = res_block2(x, 256)
-    x = res_block1(x, 256)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+model = tf.keras.Model(inputs=inputs, outputs=x)
+model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr))
+model.summary()
 
-    # 10, 12
-    x = res_block2(x, 512)
-    x = res_block1(x, 512)
-    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+for layer in weights.keys():
+    if len(weights[layer]) > 1:
+        conv, bn = weights[layer]
 
-    # 5, 6
-    x = res_block2(x, 512)
-    x = res_block1(x, 512)
+        f = load_weights[layer]['f'].numpy()
+        conv.set_weights([f])
 
-    # 5, 6
-    x = Flatten() (x)
-    x = dense_block (x, 2048)
-    x = dense_block (x, 5*6*14, last=True)
-
-    model = tf.keras.Model(inputs=inputs, outputs=x)
-    model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr))
-    model.summary()
-
-    for layer in weights.keys():
-        if len(weights[layer]) > 1:
-            conv, bn = weights[layer]
-
-            f = load_weights[layer]['f'].numpy()
-            conv.set_weights([f])
-
-            g = load_weights[layer]['g'].numpy()
-            b = load_weights[layer]['b'].numpy()
-            bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
-        else:
-            dense = weights[layer][0]
-            w = load_weights[layer]['w'].numpy()
-            b = load_weights[layer]['b'].numpy()
-            dense.set_weights([w, b])
+        g = load_weights[layer]['g'].numpy()
+        b = load_weights[layer]['b'].numpy()
+        bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
+    else:
+        dense = weights[layer][0]
+        w = load_weights[layer]['w'].numpy()
+        b = load_weights[layer]['b'].numpy()
+        dense.set_weights([w, b])
 
 ####################################
 
@@ -204,7 +200,6 @@ dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
 dataset = dataset.map(extract_fn, num_parallel_calls=4)
 dataset = dataset.batch(args.batch_size, drop_remainder=True)
-# dataset = dataset.repeat()
 dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
 ####################################
