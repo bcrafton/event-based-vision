@@ -101,10 +101,10 @@ def gradients(model, x, y):
     with tf.GradientTape() as tape:
         out = model.train(x)
         out = tf.reshape(out, (args.batch_size, 5, 6, 14))
-        loss, losses = yolo_loss(batch_size_tf, out, y)
+        loss = yolo_loss(y, out)
 
     grad = tape.gradient(loss, params)
-    return out, loss, losses, grad
+    return out, loss, (0, 0, 0, 0, 0), grad
 
 ####################################
 

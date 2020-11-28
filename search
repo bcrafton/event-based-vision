@@ -7,5 +7,8 @@
 # python train.py --epochs 15 --gpu 2 --lr 0.003 &
 # python train.py --epochs 15 --gpu 3 --lr 0.001 &
 
-nohup python train_multi_gpu.py & 
+# nohup python train_multi_gpu.py & 
+nohup python train_verif.py &
+
+# nohup python train_tf.py --epochs 15 --gpu 1 --lr 0.01 &
 

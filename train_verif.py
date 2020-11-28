@@ -135,7 +135,7 @@ x = dense_block (x, 2048)
 x = dense_block (x, 5*6*14, last=True)
 
 model = tf.keras.Model(inputs=inputs, outputs=x)
-model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr))
+model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1))
 model.summary()
 
 for layer in weights.keys():
