@@ -7,7 +7,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=15)
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--batch_size', type=int, default=16)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
@@ -111,7 +111,7 @@ x = ConvLSTM2D(16, (7, 7), padding='same', strides=3, return_sequences=True, inp
 x = ConvLSTM2D(32, (3, 3), padding='same', strides=1, return_sequences=False) (x)
 
 # 80, 96
-x = res_block1(x, 64)
+x = res_block2(x, 64)
 x = res_block1(x, 64)
 x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
