@@ -111,27 +111,27 @@ with strategy.scope():
     inputs = tf.keras.layers.Input([240, 288, 12])
 
     x = conv_block(inputs, 7, 64, 1)
-    x = AveragePooling2D(pool_size=(3, 3), padding='same', strides=3) (x)
+    x = MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) (x)
 
     # 80, 96
     x = res_block1(x, 64)
     x = res_block1(x, 64)
-    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 40, 48
     x = res_block2(x, 128)
     x = res_block1(x, 128)
-    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 20, 24
     x = res_block2(x, 256)
     x = res_block1(x, 256)
-    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 10, 12
     x = res_block2(x, 512)
     x = res_block1(x, 512)
-    x = AveragePooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
+    x = MaxPooling2D(pool_size=(2, 2), padding='same', strides=2) (x)
 
     # 5, 6
     x = res_block2(x, 512)
@@ -143,7 +143,7 @@ with strategy.scope():
     x = dense_block (x, 5*6*14, last=True)
 
     model = tf.keras.Model(inputs=inputs, outputs=x)
-    model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr))
+    model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1))
     model.summary()
 
     for layer in weights.keys():
@@ -151,16 +151,16 @@ with strategy.scope():
             conv, bn = weights[layer]
 
             f = load_weights[layer]['f'].numpy()
-            # conv.set_weights([f])
+            conv.set_weights([f])
 
             g = load_weights[layer]['g'].numpy()
             b = load_weights[layer]['b'].numpy()
-            # bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
+            bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
         else:
             dense = weights[layer][0]
             w = load_weights[layer]['w'].numpy()
             b = load_weights[layer]['b'].numpy()
-            # dense.set_weights([w, b])
+            dense.set_weights([w, b])
 
 ####################################
 
@@ -208,7 +208,6 @@ dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
 dataset = dataset.map(extract_fn, num_parallel_calls=4)
 dataset = dataset.batch(args.batch_size, drop_remainder=True)
-# dataset = dataset.repeat()
 dataset = dataset.prefetch(buffer_size=tf.data.experimental.AUTOTUNE)
 
 ####################################

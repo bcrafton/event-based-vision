@@ -200,9 +200,19 @@ experimental_relax_shapes=True or something ??
 stop using multi gpu ? 
 > wud hopefully make it easier to debug.
 
+------
 
+really just thinking it has to do with K vs TF.
+but dont want to invest more time in this
+feeling like waste of time ...
+do quantum or ADC 
 
+------
 
+dont think answer is keras.mean() or w.e.
+isnt keras wrapping tf ? 
+and keras-yolov1 ... that github repo ... uses tf 
+so w.e. 
 
 
 
