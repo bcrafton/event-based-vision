@@ -6,9 +6,9 @@ import os
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', type=int, default=15)
+parser.add_argument('--epochs', type=int, default=50)
 parser.add_argument('--batch_size', type=int, default=64)
-parser.add_argument('--lr', type=float, default=1e-3)
+parser.add_argument('--lr', type=float, default=3e-2)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
 args = parser.parse_args()
@@ -40,8 +40,8 @@ from calc_map import calc_map
 
 ####################################
 
-load_weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
-# load_weights = np.load('trained_weights.npy', allow_pickle=True).item()
+# load_weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
+load_weights = np.load('models/resnet_yolo_keras.npy', allow_pickle=True).item()
 
 ####################################
 
@@ -145,7 +145,7 @@ with strategy.scope():
     model = tf.keras.Model(inputs=inputs, outputs=x)
     model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1))
     model.summary()
-
+    '''
     for layer in weights.keys():
         if len(weights[layer]) > 1:
             conv, bn = weights[layer]
@@ -160,6 +160,22 @@ with strategy.scope():
             dense = weights[layer][0]
             w = load_weights[layer]['w'].numpy()
             b = load_weights[layer]['b'].numpy()
+            dense.set_weights([w, b])
+    '''
+    for layer in weights.keys():
+        if len(weights[layer]) > 1:
+            conv, bn = weights[layer]
+
+            f = load_weights[layer]['f']
+            conv.set_weights([f])
+
+            g = load_weights[layer]['g']
+            b = load_weights[layer]['b']
+            bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
+        else:
+            dense = weights[layer][0]
+            w = load_weights[layer]['w']
+            b = load_weights[layer]['b']
             dense.set_weights([w, b])
 
 ####################################
