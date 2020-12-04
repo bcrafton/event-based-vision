@@ -115,11 +115,10 @@ class conv3d_block(layer):
         else:         out = bn        
         return out
 
-    '''
     def collect(self, x):
-        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
-        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
-        mean, var = tf.nn.moments(conv, axes=[0,1,2])
+        x_pad = tf.pad(x, [[0, 0], [self.pad1, self.pad1], [self.pad2, self.pad2], [self.pad3, self.pad3], [0, 0]])
+        conv = tf.nn.conv3d(x_pad, self.f, [1,self.s1,self.s2,self.s3,1], 'VALID')
+        mean, var = tf.nn.moments(conv, axes=[0,1,2,3])
 
         self.var += var.numpy()
         self.mean += mean.numpy()
@@ -131,8 +130,8 @@ class conv3d_block(layer):
         return out
 
     def predict(self, x):
-        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
-        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
+        x_pad = tf.pad(x, [[0, 0], [self.pad1, self.pad1], [self.pad2, self.pad2], [self.pad3, self.pad3], [0, 0]])
+        conv = tf.nn.conv3d(x_pad, self.f, [1,self.s1,self.s2,self.s3,1], 'VALID')
 
         # mean, var = tf.nn.moments(conv, axes=[0,1,2])
         bn = tf.nn.batch_normalization(conv, self.mean, self.var, self.b, self.g, tf.constant(1e-5, dtype=tf.float32))
@@ -140,16 +139,15 @@ class conv3d_block(layer):
         if self.relu: out = tf.nn.relu(bn)
         else:         out = bn
         return out
-    '''
 
     def get_weights(self):
         weights_dict = {}
         if self.total > 0:
             var = self.var / self.total
             mean = self.mean / self.total
-            weights_dict[str(self.layer_id) + '_3d'] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
+            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
         else:
-            weights_dict[str(self.layer_id) + '_3d'] = {'f': self.f, 'g': self.g, 'b': self.b}
+            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
         return weights_dict
 
     def get_params(self):
