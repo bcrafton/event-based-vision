@@ -47,7 +47,7 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo3d.npy', allow_pickle=True).item()
     dropout = True
 else:
     weights = np.load('models/resnet_yolo_bn.npy', allow_pickle=True).item()
@@ -57,13 +57,13 @@ else:
 
 # 240, 288
 model = model(layers=[
-conv3d_block((3,7,7,1,8), (1, 1, 1)), # 240, 288
+conv3d_block((3,7,7,1,8), (1, 1, 1), weights=weights), # 240, 288
 avg_pool(s=(2, 3, 3), p=(2, 3, 3)),
 
-conv3d_block((3,3,3,8,16), (1, 1, 1)), # 80, 96
+conv3d_block((3,3,3,8,16), (1, 1, 1), weights=weights), # 80, 96
 avg_pool(s=(2, 1, 1), p=(2, 1, 1)),
 
-conv3d_block((3,3,3,16,64), (1, 1, 1)), # 80, 96
+conv3d_block((3,3,3,16,64), (1, 1, 1), weights=weights), # 80, 96
 avg_pool(s=(3, 1, 1), p=(3, 1, 1)),
 
 reshape(1, 80, 96, 64),

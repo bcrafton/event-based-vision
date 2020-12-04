@@ -47,7 +47,7 @@ class model:
 #############
 
 class layer:
-    weight_id = 1
+    weight_id = 0
     layer_id = 0
     
     def __init__(self):
@@ -69,8 +69,8 @@ class layer:
 
 class conv3d_block(layer):
     def __init__(self, shape, s, weights=None, train=True, relu=True):
-        #self.weight_id = layer.weight_id
-        #layer.weight_id += 1
+        self.weight_id = layer.weight_id
+        layer.weight_id += 1
         self.layer_id = layer.layer_id
         layer.layer_id += 1
 
@@ -83,8 +83,6 @@ class conv3d_block(layer):
         self.train_flag = tf.constant(train)
 
         if weights:
-            assert (False)
-            '''
             f, b, g = weights[self.weight_id]['f'], weights[self.weight_id]['b'], weights[self.weight_id]['g']
             self.f = tf.Variable(f, dtype=tf.float32)
             self.g = tf.Variable(g, dtype=tf.float32)
@@ -98,7 +96,6 @@ class conv3d_block(layer):
             else:
                 self.var = np.zeros(shape=self.f2)
                 self.mean = np.zeros(shape=self.f2)
-            '''
         else:
             f_np = init_filters3d(size=[self.k1, self.k2, self.k3, self.f1, self.f2], init='glorot_uniform')
             self.f = tf.Variable(f_np, dtype=tf.float32)
