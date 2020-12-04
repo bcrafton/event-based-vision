@@ -5,6 +5,7 @@ np.set_printoptions(threshold=1000)
 import tensorflow as tf
 
 from bc_utils.init_tensor import init_filters
+from bc_utils.init_tensor import init_filters3d
 from bc_utils.init_tensor import init_matrix
 
 #############
@@ -65,7 +66,103 @@ class layer:
         assert(False)
         
 #############
-        
+
+class conv3d_block(layer):
+    def __init__(self, shape, p, weights=None, train=True, relu=True):
+        self.weight_id = layer.weight_id
+        layer.weight_id += 1
+        self.layer_id = layer.layer_id
+        layer.layer_id += 1
+
+        self.k1, self.k2, self.k3, self.f1, self.f2 = shape
+        self.p = p
+        self.pad1 = self.k1 // 2
+        self.pad2 = self.k2 // 2
+        self.pad3 = self.k3 // 2
+        self.relu = tf.constant(relu)
+        self.train_flag = tf.constant(train)
+
+        if weights:
+            assert (False)
+            '''
+            f, b, g = weights[self.weight_id]['f'], weights[self.weight_id]['b'], weights[self.weight_id]['g']
+            self.f = tf.Variable(f, dtype=tf.float32)
+            self.g = tf.Variable(g, dtype=tf.float32)
+            self.b = tf.Variable(b, dtype=tf.float32)
+            self.total = 0
+            if 'var' in weights[self.weight_id].keys():
+                assert ('mean' in weights[self.weight_id].keys())
+                var, mean = weights[self.weight_id]['var'], weights[self.weight_id]['mean']
+                self.var = tf.Variable(var, dtype=tf.float32)
+                self.mean = tf.Variable(mean, dtype=tf.float32)
+            else:
+                self.var = np.zeros(shape=self.f2)
+                self.mean = np.zeros(shape=self.f2)
+            '''
+        else:
+            f_np = init_filters3d(size=[self.k1, self.k2, self.k3, self.f1, self.f2], init='glorot_uniform')
+            self.f = tf.Variable(f_np, dtype=tf.float32)
+            self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
+            self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
+
+            self.total = 0
+            self.var = np.zeros(shape=self.f2)
+            self.mean = np.zeros(shape=self.f2)
+
+    def train(self, x):
+        x_pad = tf.pad(x, [[0, 0], [self.pad1, self.pad1], [self.pad2, self.pad2], [self.pad3, self.pad3], [0, 0]])
+        conv = tf.nn.conv3d(x_pad, self.f, [1,self.p,self.p,self.p,1], 'VALID')
+        mean, var = tf.nn.moments(conv, axes=[0,1,2,3])
+        bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)        
+        if self.relu: out = tf.nn.relu(bn)
+        else:         out = bn        
+        return out
+
+    '''
+    def collect(self, x):
+        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
+        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
+        mean, var = tf.nn.moments(conv, axes=[0,1,2])
+
+        self.var += var.numpy()
+        self.mean += mean.numpy()
+        self.total += 1
+
+        bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)
+        if self.relu: out = tf.nn.relu(bn)
+        else:         out = bn
+        return out
+
+    def predict(self, x):
+        x_pad = tf.pad(x, [[0, 0], [self.pad, self.pad], [self.pad, self.pad], [0, 0]])
+        conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
+
+        # mean, var = tf.nn.moments(conv, axes=[0,1,2])
+        bn = tf.nn.batch_normalization(conv, self.mean, self.var, self.b, self.g, tf.constant(1e-5, dtype=tf.float32))
+
+        if self.relu: out = tf.nn.relu(bn)
+        else:         out = bn
+        return out
+    '''
+
+    def get_weights(self):
+        weights_dict = {}
+        if self.total > 0:
+            var = self.var / self.total
+            mean = self.mean / self.total
+            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
+        else:
+            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
+        return weights_dict
+
+    def get_params(self):
+        if self.train_flag:
+            return [self.f, self.b, self.g]
+        else:
+            return []
+
+#############
+
 class conv_block(layer):
     def __init__(self, shape, p, weights=None, train=True, relu=True):
         self.weight_id = layer.weight_id
@@ -362,7 +459,29 @@ class max_pool(layer):
     def get_params(self):
         return []
 
+#############
 
+class reshape(layer):
+    def __init__(self, d, h, w, c):
+        self.layer_id = layer.layer_id
+        layer.layer_id += 1
+    
+        self.d = d
+        self.h = h
+        self.w = w
+        self.c = c
+        
+    def train(self, x):
+        x = tf.transpose(x, (0, 2, 3, 1, 4))
+        x = tf.reshape(x, (-1, self.h, self.w, self.d * self.c))
+        return x
+    
+    def get_weights(self):    
+        weights_dict = {}
+        return weights_dict
+
+    def get_params(self):
+        return []
 
 
 
