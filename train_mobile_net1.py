@@ -6,9 +6,9 @@ import os
 import sys
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--epochs', type=int, default=1)
-parser.add_argument('--batch_size', type=int, default=96)
-parser.add_argument('--lr', type=float, default=1e-2)
+parser.add_argument('--epochs', type=int, default=10)
+parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
 args = parser.parse_args()
@@ -32,7 +32,7 @@ tf.config.experimental.set_visible_devices(gpu, 'GPU')
 tf.config.experimental.set_memory_growth(gpu, True)
 '''
 
-os.environ["CUDA_VISIBLE_DEVICES"]="0,1,2"
+os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 from yolo_loss import yolo_loss
 from draw_boxes import draw_box
@@ -40,8 +40,8 @@ from calc_map import calc_map
 
 ####################################
 
-# load_weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
-load_weights = np.load('models/MobileNet.npy', allow_pickle=True).item()
+load_weights = np.load('models/mobile_yolo.npy', allow_pickle=True).item()
+# load_weights = np.load('models/MobileNet.npy', allow_pickle=True).item()
 
 ####################################
 
@@ -64,11 +64,11 @@ strategy = tf.distribute.MirroredStrategy()
 print('Number of devices: {}'.format(strategy.num_replicas_in_sync))
 with strategy.scope():
 
-    layer_id = 1
+    layer_id = 0
     weights = {}
 
-    def conv_block(x, k, f, s, relu=True, load=True):
-        conv = Conv2D(f, (k, k), padding='same', strides=s, use_bias=False) 
+    def conv_block(x, k, f, s, relu=True, load=True, trainable=True):
+        conv = Conv2D(f, (k, k), padding='same', strides=s, use_bias=False, trainable=trainable) 
         bn = BatchNormalization(epsilon=1e-5)
 
         x = conv (x)
@@ -82,8 +82,8 @@ with strategy.scope():
         if relu: x = ReLU() (x)
         return x
 
-    def dw_conv_block(x, k, f, s, relu=True, load=True):
-        conv = DepthwiseConv2D((k, k), strides=s, padding='same', depth_multiplier=1, use_bias=False) 
+    def dw_conv_block(x, k, f, s, relu=True, load=True, trainable=True):
+        conv = DepthwiseConv2D((k, k), strides=s, padding='same', depth_multiplier=1, use_bias=False, trainable=trainable) 
         bn = BatchNormalization(epsilon=1e-5)
 
         x = conv (x)
@@ -125,14 +125,14 @@ with strategy.scope():
             x = Dropout(0.5) (x)
         return x
 
-    def mobile_block(x, f1, f2, s):
-        x = dw_conv_block(x, 3, f1, s)
-        x = conv_block(x, 1, f2, 1)
+    def mobile_block(x, f1, f2, s, trainable=True):
+        x = dw_conv_block(x, 3, f1, s, trainable=trainable)
+        x = conv_block(x, 1, f2, 1, trainable=trainable)
         return x
 
     # 240, 288
     inputs = tf.keras.layers.Input([240, 288, 12])
-    x = conv_block(inputs, 7, 32, 1, load=False)
+    x = conv_block(inputs, 7, 32, 1)
     x = MaxPooling2D(pool_size=(3, 3), padding='same', strides=3) (x)
 
     # 80, 96
@@ -165,16 +165,22 @@ with strategy.scope():
     model.compile(loss=yolo_loss, optimizer=tf.keras.optimizers.Adam(lr=args.lr, beta_1=0.9, beta_2=0.999, epsilon=1))
     model.summary()
 
+    print (weights.keys())
     for layer in weights.keys():
         if len(weights[layer]) > 1:
             conv, bn = weights[layer]
 
-            f = load_weights[layer]['f'].numpy()
+            f = load_weights[layer]['f']#.numpy()
             conv.set_weights([f])
 
-            g = load_weights[layer]['g'].numpy()
-            b = load_weights[layer]['b'].numpy()
+            g = load_weights[layer]['g']#.numpy()
+            b = load_weights[layer]['b']#.numpy()
             bn.set_weights([g, b, np.zeros_like(b), np.ones_like(g)]) # g, b, mu, std
+        else:
+            dense = weights[layer][0]
+            w = load_weights[layer]['w']#.numpy()
+            b = load_weights[layer]['b']#.numpy()
+            dense.set_weights([w, b])
 
     '''
     weights = {}

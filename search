@@ -12,5 +12,7 @@
 
 # nohup python train_tf.py --epochs 15 --gpu 1 --lr 0.01 &
 
-nohup python train_lstm2.py &
+# nohup python train_lstm2.py &
+
+nohup python train_mobile_net1.py &
 
