@@ -57,38 +57,42 @@ else:
 
 # 240, 288
 model = model(layers=[
-conv3d_block((3,7,7,1,8), 1), # 240, 288
-conv3d_block((3,7,7,8,8), 1), # 240, 288
-conv3d_block((3,7,7,8,8), 1), # 240, 288
-reshape(12, 240, 288, 8),
+conv3d_block((3,7,7,1,8), (1, 1, 1)), # 240, 288
+avg_pool(s=(2, 3, 3), p=(2, 3, 3)),
 
-max_pool(s=3, p=3),
+conv3d_block((3,3,3,8,16), (1, 1, 1)), # 80, 96
+avg_pool(s=(2, 1, 1), p=(2, 1, 1)),
 
-res_block2(96,   64, 1), # 80, 96
-res_block1(64,   64, 1), # 80, 96
+conv3d_block((3,3,3,16,64), (1, 1, 1)), # 80, 96
+avg_pool(s=(3, 1, 1), p=(3, 1, 1)),
 
-max_pool(s=2, p=2),
+reshape(1, 80, 96, 64),
 
-res_block2(64,   128, 1), # 40, 48
-res_block1(128,  128, 1), # 40, 48
-
-max_pool(s=2, p=2),
-
-res_block2(128,  256, 1), # 20, 24
-res_block1(256,  256, 1), # 20, 24
+res_block1(64,   64, 1, weights=weights), # 80, 96
+res_block1(64,   64, 1, weights=weights), # 80, 96
 
 max_pool(s=2, p=2),
 
-res_block2(256,  512, 1), # 10, 12
-res_block1(512,  512, 1), # 10, 12
+res_block2(64,   128, 1, weights=weights), # 40, 48
+res_block1(128,  128, 1, weights=weights), # 40, 48
 
 max_pool(s=2, p=2),
 
-res_block2(512,  512, 1), # 5, 6
-res_block1(512,  512, 1), # 5, 6
+res_block2(128,  256, 1, weights=weights), # 20, 24
+res_block1(256,  256, 1, weights=weights), # 20, 24
 
-dense_block(5*6*512, 2048, dropout=dropout),
-dense_block(2048, 5*6*14, relu=False),
+max_pool(s=2, p=2),
+
+res_block2(256,  512, 1, weights=weights), # 10, 12
+res_block1(512,  512, 1, weights=weights), # 10, 12
+
+max_pool(s=2, p=2),
+
+res_block2(512,  512, 1, weights=weights), # 5, 6
+res_block1(512,  512, 1, weights=weights), # 5, 6
+
+dense_block(5*6*512, 2048, weights=weights, dropout=dropout),
+dense_block(2048, 5*6*14, weights=weights, relu=False),
 ])
 
 params = model.get_params()
@@ -212,7 +216,7 @@ if args.train:
             total_loss        += loss.numpy()
             total += 1
 
-            if total % 1000 == 0:
+            if total % 100 == 0:
                 yx_loss     = int(total_yx_loss     / total_loss * 100)
                 hw_loss     = int(total_hw_loss     / total_loss * 100)
                 obj_loss    = int(total_obj_loss    / total_loss * 100)

@@ -47,7 +47,7 @@ class model:
 #############
 
 class layer:
-    weight_id = 0
+    weight_id = 1
     layer_id = 0
     
     def __init__(self):
@@ -68,14 +68,14 @@ class layer:
 #############
 
 class conv3d_block(layer):
-    def __init__(self, shape, p, weights=None, train=True, relu=True):
-        self.weight_id = layer.weight_id
-        layer.weight_id += 1
+    def __init__(self, shape, s, weights=None, train=True, relu=True):
+        #self.weight_id = layer.weight_id
+        #layer.weight_id += 1
         self.layer_id = layer.layer_id
         layer.layer_id += 1
 
         self.k1, self.k2, self.k3, self.f1, self.f2 = shape
-        self.p = p
+        self.s1, self.s2, self.s3 = s
         self.pad1 = self.k1 // 2
         self.pad2 = self.k2 // 2
         self.pad3 = self.k3 // 2
@@ -111,7 +111,7 @@ class conv3d_block(layer):
 
     def train(self, x):
         x_pad = tf.pad(x, [[0, 0], [self.pad1, self.pad1], [self.pad2, self.pad2], [self.pad3, self.pad3], [0, 0]])
-        conv = tf.nn.conv3d(x_pad, self.f, [1,self.p,self.p,self.p,1], 'VALID')
+        conv = tf.nn.conv3d(x_pad, self.f, [1,self.s1,self.s2,self.s3,1], 'VALID')
         mean, var = tf.nn.moments(conv, axes=[0,1,2,3])
         bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)        
         if self.relu: out = tf.nn.relu(bn)
@@ -150,9 +150,9 @@ class conv3d_block(layer):
         if self.total > 0:
             var = self.var / self.total
             mean = self.mean / self.total
-            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
+            weights_dict[str(self.layer_id) + '_3d'] = {'f': self.f, 'g': self.g, 'b': self.b, 'var': var, 'mean': mean}
         else:
-            weights_dict[self.weight_id] = {'f': self.f, 'g': self.g, 'b': self.b}
+            weights_dict[str(self.layer_id) + '_3d'] = {'f': self.f, 'g': self.g, 'b': self.b}
         return weights_dict
 
     def get_params(self):
