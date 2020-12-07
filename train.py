@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--lr', type=float, default=1e-2)
+parser.add_argument('--dropout', type=float, default=0.5)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -47,11 +48,11 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo3d.npy', allow_pickle=True).item()
-    dropout = True
+    weights = np.load('models/resnet_yolo3d_C.npy', allow_pickle=True).item()
+    dropout = args.dropout
 else:
-    weights = np.load('models/resnet_yolo_bn.npy', allow_pickle=True).item()
-    dropout = False
+    weights = np.load('models/resnet_yolo3d_bn_C.npy', allow_pickle=True).item()
+    dropout = 0.0
 
 ####################################
 
@@ -274,7 +275,7 @@ if not args.train:
         true, pred = y.numpy(), out.numpy()
         ys.append(np.copy(true))
         preds.append(np.copy(pred))
-        draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
+        # draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
 
     print (total * args.batch_size)
     ys = np.concatenate(ys, axis=0).astype(np.float32)

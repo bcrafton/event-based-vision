@@ -351,7 +351,7 @@ class res_block2(layer):
 #############
 
 class dense_block(layer):
-    def __init__(self, isize, osize, weights=None, train=True, relu=True, dropout=False):
+    def __init__(self, isize, osize, weights=None, train=True, relu=True, dropout=0.0):
         self.weight_id = layer.weight_id
         layer.weight_id += 1
         self.layer_id = layer.layer_id
@@ -360,8 +360,8 @@ class dense_block(layer):
         self.isize = isize
         self.osize = osize
         self.relu = tf.constant(relu)
-        self.dropout = tf.constant(dropout)
         self.train_flag = tf.constant(train)
+        self.dropout = tf.constant(dropout)
 
         if weights:
             w, b = weights[self.weight_id]['w'], weights[self.weight_id]['b']
@@ -379,8 +379,7 @@ class dense_block(layer):
         if self.relu: out = tf.nn.relu(fc)
         else:         out = fc
 
-        if self.dropout: out = tf.nn.dropout(out, 0.5)
-
+        out = tf.nn.dropout(out, self.dropout)
         return out
 
     def collect(self, x):
