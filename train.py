@@ -9,6 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--lr', type=float, default=1e-3)
+parser.add_argument('--dropout', type=float, default=0.5)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -48,18 +49,25 @@ from calc_map import calc_map
 
 if args.train:
     weights = np.load('models/resnet_yolo_new_loss.npy', allow_pickle=True).item()
-    dropout = True
+    dropout = args.dropout
 else:
     weights = np.load('models/resnet_yolo_new_loss_bn.npy', allow_pickle=True).item()
-    dropout = False
+    dropout = 0.0
 
 ####################################
 
 # 240, 288
 model = model(layers=[
-conv_block((7,7,12,64), 1, weights=weights), # 240, 288
+conv3d_block((3,7,7,1,8), (1, 1, 1), weights=weights), # 240, 288
+avg_pool(s=(2, 3, 3), p=(2, 3, 3)),
 
-max_pool(s=3, p=3),
+conv3d_block((3,3,3,8,16), (1, 1, 1), weights=weights), # 80, 96
+avg_pool(s=(2, 1, 1), p=(2, 1, 1)),
+
+conv3d_block((3,3,3,16,64), (1, 1, 1), weights=weights), # 80, 96
+avg_pool(s=(3, 1, 1), p=(3, 1, 1)),
+
+reshape(1, 80, 96, 64),
 
 res_block1(64,   64, 1, weights=weights), # 80, 96
 res_block1(64,   64, 1, weights=weights), # 80, 96
@@ -148,6 +156,9 @@ def extract_fn(record):
     image = tf.io.decode_raw(sample['image_raw'], tf.uint8)
     image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
     image = tf.reshape(image, (240, 288, 12))
+    
+    image = tf.transpose(image, (2, 0, 1))
+    image = tf.reshape(image, (12, 240, 288, 1))
 
     return [image, label]
 
@@ -168,7 +179,6 @@ def collect_filenames(path):
 ####################################
 
 if args.train: filenames = collect_filenames('./dataset/train')
-# if args.train: filenames = collect_filenames('/home/bcrafton3/Data_HDD/event-based-vision/dataset/train')
 else:          filenames = collect_filenames('./dataset/val')
 
 dataset = tf.data.TFRecordDataset(filenames)
@@ -265,7 +275,7 @@ if not args.train:
         true, pred = y.numpy(), out.numpy()
         ys.append(np.copy(true))
         preds.append(np.copy(pred))
-        draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
+        # draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
 
     print (total * args.batch_size)
     ys = np.concatenate(ys, axis=0).astype(np.float32)

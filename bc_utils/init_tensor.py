@@ -68,7 +68,14 @@ def init_filters(size, init, std=None):
     
 #######################################
     
-    
+def init_filters3d(size, init, std=None):
+
+    fd, fh, fw, fin, fout = size
+
+    limit = np.sqrt(6. / (fd*fh*fw*fin + fd*fh*fw*fout))
+    weights = np.random.uniform(low=-limit, high=limit, size=(fd, fh, fw, fin, fout))
+        
+    return weights
     
     
     
