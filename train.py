@@ -8,7 +8,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=32)
-parser.add_argument('--lr', type=float, default=1e-2)
+parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -47,10 +47,10 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_new_loss.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo_bn.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_new_loss_bn.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -167,8 +167,9 @@ def collect_filenames(path):
 
 ####################################
 
-if   args.train: filenames = collect_filenames('./dataset/train')
-else:            filenames = collect_filenames('./dataset/val')
+if args.train: filenames = collect_filenames('./dataset/train')
+# if args.train: filenames = collect_filenames('/home/bcrafton3/Data_HDD/event-based-vision/dataset/train')
+else:          filenames = collect_filenames('./dataset/val')
 
 dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)

@@ -19,12 +19,15 @@ def grid_to_pix(box):
     pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
     return pix_box
 
+# tf.grad_pass_through(calc_iou_help)(boxA, realBox) ... does not work
+# @tf.custom_gradient
 @tf.function(experimental_relax_shapes=False)
 def calc_iou(boxA, boxB, realBox):
     iou1 = calc_iou_help(boxA, realBox)
     iou2 = calc_iou_help(boxB, realBox)
     return tf.stack([iou1, iou2], axis=4)
 
+# @tf.custom_gradient
 @tf.function(experimental_relax_shapes=False)
 def calc_iou_help(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
@@ -46,10 +49,18 @@ def calc_iou_help(boxA, boxB):
     # compute the intersection over union by taking the intersection
     # area and dividing it by the sum of prediction + ground-truth
     # areas - the interesection area
-    iou = interArea / (boxAArea + boxBArea - interArea)
+    iou = interArea / tf.maximum(boxAArea + boxBArea - interArea, tf.maximum(tf.constant(1e-6), interArea))
+
+    def grad(dy):
+        # return tf.ones(shape=(32,1,5,6,4)), tf.ones(shape=(32,8,5,6,4))
+        da = tf.reduce_sum(dy, axis=1, keepdims=True)
+        da = tf.stack((da, da, da, da), axis=-1)
+        db = dy
+        db = tf.stack((db, db, db, db), axis=-1)
+        return da, db
 
     # return the intersection over union value
-    return iou
+    return iou#, grad
 
 @tf.custom_gradient
 def abs_no_grad(x):
@@ -149,9 +160,8 @@ def yolo_loss(batch_size, pred, label):
     obj_loss = 1. * obj * vld * tf.where(resp_box, loss_obj1, loss_obj2)
     '''
 
-    loss_obj1 = tf.square(pred_conf1 - 1) * obj_mask1
-    loss_obj2 = tf.square(pred_conf2 - 1) * obj_mask2
-    # obj_loss = 1. * obj * vld * (loss_obj1 + loss_obj2)
+    loss_obj1 = tf.square(pred_conf1 - tf.stop_gradient(iou[:, :, :, :, 0])) * obj_mask1
+    loss_obj2 = tf.square(pred_conf2 - tf.stop_gradient(iou[:, :, :, :, 1])) * obj_mask2
     obj_loss = 1. * vld * (loss_obj1 + loss_obj2)
     obj_loss = tf.reduce_mean(tf.reduce_sum(obj_loss, axis=[2, 3]))
 
@@ -165,9 +175,16 @@ def yolo_loss(batch_size, pred, label):
 
     loss_no_obj1 = tf.square(pred_conf1) * no_obj_mask1
     loss_no_obj2 = tf.square(pred_conf2) * no_obj_mask2
-    # no_obj_loss = 0.5 * no_obj * vld * (loss_no_obj1 + loss_no_obj2)
     no_obj_loss = 0.5 * vld * (loss_no_obj1 + loss_no_obj2)
     no_obj_loss = tf.reduce_mean(tf.reduce_sum(no_obj_loss, axis=[2, 3]))
+
+    ######################################
+
+    '''
+    conf_loss1 = tf.square(pred_conf1 - iou[:, :, :, :, 0])
+    conf_loss2 = tf.square(pred_conf2 - iou[:, :, :, :, 1])
+    conf_loss = tf.where()
+    '''
 
     ######################################
 
