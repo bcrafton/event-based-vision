@@ -26,11 +26,12 @@ def _int64_feature(value):
 def _bytes_feature(value):
     return tf.train.Feature(bytes_list=tf.train.BytesList(value=[value]))
 
-def write_tfrecord(filename, frames, label):
-    with tf.io.TFRecordWriter(filename) as writer:
+def write_tfrecord(path, id, frames, label):
+    with tf.io.TFRecordWriter('%s/%d.tfrecord' % (path, id)) as writer:
         image_raw = frames.astype(np.uint8).tostring()
         label_raw = label.astype(np.float32).tostring()
         _feature={
+                'id_raw':    _int64_feature(id),
                 'label_raw': _bytes_feature(label_raw),
                 'image_raw': _bytes_feature(image_raw)
                 }
@@ -75,7 +76,8 @@ def detection(boxes):
 def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
     frame = np.zeros((240, 304, 3), dtype=np.uint8)
-    
+    id = 0
+
     for video_idx in range(len(td_files)):
         print (video_idx)
     
@@ -83,7 +85,7 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
         box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
         
         frames = []
-        frame_idx = 0
+        # frame_idx = 0
         while not video.done:
 
             events = video.load_delta_t(delta_t)
@@ -122,11 +124,12 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                     img = img - np.min(img)
                     std = np.std(img)
                     if std > 5:
-                        filename = '%s/%d_%d.tfrecord' % (path, video_idx, frame_idx)
-                        write_tfrecord(filename, frames_cp, det_np)
+                        # filename = '%s/%d_%d.tfrecord' % (path, video_idx, frame_idx)
+                        write_tfrecord(path, id, frames_cp, det_np)
 
                 frames = []
-                frame_idx += 1
+                # frame_idx += 1
+                id += 1
 
 ###########################################################
 
@@ -154,7 +157,7 @@ train_path = './src_data/'
 val_path = ''
 '''
 ###########################################################
-'''
+# '''
 records = []
 records = records + collect_filenames(train_path)
 records = records + collect_filenames(val_path)
@@ -164,9 +167,9 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-'''
+# '''
 ###########################################################
-
+'''
 records = []
 records = records + collect_filenames(test_a_path)
 # records = records + collect_filenames(test_b_path)
@@ -175,7 +178,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-
+'''
 ###########################################################
     
     

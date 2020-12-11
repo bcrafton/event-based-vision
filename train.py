@@ -136,10 +136,13 @@ def write(filename, text):
 @tf.function(experimental_relax_shapes=False)
 def extract_fn(record):
     _feature={
+        'id_raw':    tf.io.FixedLenFeature([], tf.int64),
         'label_raw': tf.io.FixedLenFeature([], tf.string),
         'image_raw': tf.io.FixedLenFeature([], tf.string)
     }
     sample = tf.io.parse_single_example(record, _feature)
+
+    id = sample['id_raw']
 
     label = tf.io.decode_raw(sample['label_raw'], tf.float32)
     label = tf.cast(label, dtype=tf.float32)
@@ -149,7 +152,7 @@ def extract_fn(record):
     image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
     image = tf.reshape(image, (240, 288, 12))
 
-    return [image, label]
+    return [id, image, label]
 
 ####################################
 
@@ -168,7 +171,6 @@ def collect_filenames(path):
 ####################################
 
 if args.train: filenames = collect_filenames('./dataset/train')
-# if args.train: filenames = collect_filenames('/home/bcrafton3/Data_HDD/event-based-vision/dataset/train')
 else:          filenames = collect_filenames('./dataset/val')
 
 dataset = tf.data.TFRecordDataset(filenames)
@@ -193,7 +195,7 @@ if args.train:
         total = 0
         start = time.time()
 
-        for (x, y) in dataset:
+        for (id, x, y) in dataset:
 
             out, loss, losses, grad = gradients(model, x, y)
             optimizer.apply_gradients(zip(grad, params))
@@ -234,7 +236,7 @@ if args.train:
 if args.train and (args.epochs == 0):
     total = 0
     start = time.time()
-    for (x, y) in dataset:
+    for (id, x, y) in dataset:
         out = collect(model, x)
         total += 1
         if total % 1000 == 0:
@@ -250,10 +252,11 @@ if not args.train:
 
     total = 0
     start = time.time()
+    ids = []
     ys = []
     preds = []
 
-    for (x, y) in dataset:
+    for (id, x, y) in dataset:
 
         out = predict(model, x)
 
@@ -263,15 +266,18 @@ if not args.train:
             print('total: %d, rate: %f' % (total * args.batch_size, avg_rate))
 
         true, pred = y.numpy(), out.numpy()
+        ids.append(np.array(id))
         ys.append(np.copy(true))
         preds.append(np.copy(pred))
-        draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
+        # draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
 
     print (total * args.batch_size)
+    ids = np.concatenate(ids, axis=0).astype(np.float32)
     ys = np.concatenate(ys, axis=0).astype(np.float32)
     preds = np.concatenate(preds, axis=0).astype(np.float32)
 
     results = {}
+    results['id'] = ids
     results['true'] = ys
     results['pred'] = preds
     np.save('results', results)
