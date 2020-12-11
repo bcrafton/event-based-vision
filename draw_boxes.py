@@ -21,36 +21,6 @@ def grid_to_pix(box):
 
 ##############################################################
 
-def calc_iou(label, pred1, pred2):
-    iou1 = calc_iou_help(label, pred1)
-    iou2 = calc_iou_help(label, pred2)
-    return np.stack([iou1, iou2], 3)
-
-def calc_iou_help(boxA, boxB):
-    # determine the (x, y)-coordinates of the intersection rectangle
-    yA = np.maximum(boxA[...,0] - 0.5 * boxA[...,2], boxB[...,0] - 0.5 * boxB[...,2])
-    yB = np.minimum(boxA[...,0] + 0.5 * boxA[...,2], boxB[...,0] + 0.5 * boxB[...,2])
-
-    xA = np.maximum(boxA[...,1] - 0.5 * boxA[...,3], boxB[...,1] - 0.5 * boxB[...,3])
-    xB = np.minimum(boxA[...,1] + 0.5 * boxA[...,3], boxB[...,1] + 0.5 * boxB[...,3])
-
-    # compute the area of intersection rectangle
-    iy = yB - yA
-    ix = xB - xA
-    interArea = np.maximum(np.zeros_like(iy), iy) * np.maximum(np.zeros_like(ix), ix)
-
-    # compute the area of both the prediction and ground-truth rectangles
-    boxAArea = np.absolute(boxA[...,2] * boxA[...,3])
-    boxBArea = np.absolute(boxB[...,2] * boxB[...,3])
-
-    # compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the interesection area
-    iou = interArea / (boxAArea + boxBArea - interArea)
-
-    # return the intersection over union value
-    return iou
-
 def draw_box(name, image, truth, pred):
     true_image = np.copy(image)
     pred_image = np.copy(image)
@@ -59,15 +29,8 @@ def draw_box(name, image, truth, pred):
 
     ############################################
 
-    boxes   = grid_to_pix(truth[:, :, :, 0:4])
-    objs    = truth[:, :, :, 4]
-    no_objs = truth[:, :, :, 5]
-    cats    = truth[:, :, :, 6]
-    vld     = truth[:, :, :, 7]
-    
-    obj = np.where(truth[:, :, :, 4] == 1)
-    box = boxes[obj]
-    cat = cats[obj]
+    box = truth[:, 0:4]
+    cat = truth[:, 4]
     
     ndet = len(box)
     for d in range(ndet):
@@ -75,41 +38,23 @@ def draw_box(name, image, truth, pred):
 
     ############################################
     
-    cat1 = np.argmax(pred[:, :, 10:12], axis=-1)
-    box1  = grid_to_pix(pred[:, :, 0:4])
-    conf1 = pred[:, :, 4]
-    obj1 = np.where(conf1 > 0.25)
-    boxes1 = box1[obj1]
-    conf1 = conf1[obj1]
-    cat1 = cat1[obj1]
+    box = pred[:, 0:4]
+    conf = pred[:, 4]
+    cat = pred[:, 5]
     
-    ndet = len(conf1)
+    ndet = len(box)
     for d in range(ndet):
-        draw_box_help(pred_image, boxes1[d], cat1[d], None)
-    
-    ############################################
-
-    cat2 = np.argmax(pred[:, :, 12:14], axis=-1)
-    box2  = grid_to_pix(pred[:, :, 5:9])
-    conf2 = pred[:, :, 9]
-    obj2 = np.where(conf2 > 0.25)
-    boxes2 = box2[obj2]
-    conf2 = conf2[obj2]
-    cat2 = cat2[obj2]
-
-    ndet = len(conf2)
-    for d in range(ndet):
-        draw_box_help(pred_image, boxes2[d], cat2[d], None)
+        if conf[d] > 0.25: draw_box_help(pred_image, box[d], cat[d], None)
     
     ############################################
         
     concat = np.concatenate((true_image, pred_image), axis=1)
-    plt.imsave(name, concat)
+    plt.imsave(name, concat, cmap='gray')
 
 def draw_box_help(image, box, cat, color):
-    [y, x, h, w] = box
-    pt1 = (int(x-0.5*w), int(y-0.5*h))
-    pt2 = (int(x+0.5*w), int(y+0.5*h))
+    [x, y, w, h] = box
+    pt1 = (int(x), int(y))
+    pt2 = (int(x+w), int(y+h))
     cv2.rectangle(image, pt1, pt2, 0, 1)
     label = 'Human' if cat == 1 else 'Car'
     cv2.putText(image, label, (int(x), int(y)), 0, 0.3, (0, 255, 0))
