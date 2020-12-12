@@ -13,29 +13,20 @@ offset = tf.constant(offset_np, dtype=tf.float32)
 
 @tf.function(experimental_relax_shapes=False)
 def grid_to_pix(box):
-    pix_box_yx = 48. * box[:, :, :, :, 0:2] + offset
-    pix_box_h = tf.square(box[:, :, :, :, 2:3]) * 240.
-    pix_box_w = tf.square(box[:, :, :, :, 3:4]) * 288.
-    pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=4)
+    pix_box_yx = 48. * box[..., 0:2] + offset
+    pix_box_h = tf.square(box[..., 2:3]) * 240.
+    pix_box_w = tf.square(box[..., 3:4]) * 288.
+    pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=-1)
     return pix_box
 
-# tf.grad_pass_through(calc_iou_help)(boxA, realBox) ... does not work
-# @tf.custom_gradient
 @tf.function(experimental_relax_shapes=False)
-def calc_iou(boxA, boxB, realBox):
-    iou1 = calc_iou_help(boxA, realBox)
-    iou2 = calc_iou_help(boxB, realBox)
-    return tf.stack([iou1, iou2], axis=4)
-
-# @tf.custom_gradient
-@tf.function(experimental_relax_shapes=False)
-def calc_iou_help(boxA, boxB):
+def calc_iou(boxA, boxB):
     # determine the (x, y)-coordinates of the intersection rectangle
-    yA = tf.maximum(boxA[:,:,:,:,0] - 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] - 0.5 * boxB[:,:,:,:,2])
-    yB = tf.minimum(boxA[:,:,:,:,0] + 0.5 * boxA[:,:,:,:,2], boxB[:,:,:,:,0] + 0.5 * boxB[:,:,:,:,2])
+    yA = tf.maximum(boxA[...,0] - 0.5 * boxA[...,2], boxB[...,0] - 0.5 * boxB[...,2])
+    yB = tf.minimum(boxA[...,0] + 0.5 * boxA[...,2], boxB[...,0] + 0.5 * boxB[...,2])
 
-    xA = tf.maximum(boxA[:,:,:,:,1] - 0.5 * boxA[:,:,:,:,3], boxB[:,:,:,:,1] - 0.5 * boxB[:,:,:,:,3])
-    xB = tf.minimum(boxA[:,:,:,:,1] + 0.5 * boxA[:,:,:,:,3], boxB[:,:,:,:,1] + 0.5 * boxB[:,:,:,:,3])
+    xA = tf.maximum(boxA[...,1] - 0.5 * boxA[...,3], boxB[...,1] - 0.5 * boxB[...,3])
+    xB = tf.minimum(boxA[...,1] + 0.5 * boxA[...,3], boxB[...,1] + 0.5 * boxB[...,3])
 
     # compute the area of intersection rectangle
     iy = yB - yA
@@ -43,24 +34,16 @@ def calc_iou_help(boxA, boxB):
     interArea = tf.maximum(tf.zeros_like(iy), iy) * tf.maximum(tf.zeros_like(ix), ix)
 
     # compute the area of both the prediction and ground-truth rectangles
-    boxAArea = tf.abs(boxA[:,:,:,:,2] * boxA[:,:,:,:,3])
-    boxBArea = tf.abs(boxB[:,:,:,:,2] * boxB[:,:,:,:,3])
+    boxAArea = tf.abs(boxA[...,2] * boxA[...,3])
+    boxBArea = tf.abs(boxB[...,2] * boxB[...,3])
 
     # compute the intersection over union by taking the intersection
     # area and dividing it by the sum of prediction + ground-truth
     # areas - the interesection area
     iou = interArea / tf.maximum(boxAArea + boxBArea - interArea, tf.maximum(tf.constant(1e-6), interArea))
 
-    def grad(dy):
-        # return tf.ones(shape=(32,1,5,6,4)), tf.ones(shape=(32,8,5,6,4))
-        da = tf.reduce_sum(dy, axis=1, keepdims=True)
-        da = tf.stack((da, da, da, da), axis=-1)
-        db = dy
-        db = tf.stack((db, db, db, db), axis=-1)
-        return da, db
-
     # return the intersection over union value
-    return iou#, grad
+    return iou
 
 @tf.custom_gradient
 def abs_no_grad(x):
@@ -83,178 +66,85 @@ def yolo_loss(batch_size, pred, label):
     # no_obj = [4, -1, 7, 7]
     # cat    = [4, -1, 7, 7]
 
-    pred = tf.reshape(pred, [batch_size, 1, 5, 6, 14])
-    obj    = label[:, :, :, :, 4]
-    no_obj = label[:, :, :, :, 5]
-    cat    = tf.cast(label[:, :, :, :, 6], dtype=tf.int32)
-    vld    = label[:, :, :, :, 7]
+    pred   = tf.reshape(pred,  [batch_size, 1, 5, 5, 6, 7])
+    label  = tf.reshape(label, [batch_size, 8, 1, 5, 6, 8])
+    obj    = label[..., 4]
+    no_obj = label[..., 5]
+    cat    = tf.cast(label[..., 6], dtype=tf.int32)
+    vld    = label[..., 7]
 
     ######################################
 
-    label_box = grid_to_pix(label[:, :, :, :, 0:4])
-    pred_box1 = grid_to_pix(pred[:, :, :, :, 0:4])
-    pred_box2 = grid_to_pix(pred[:, :, :, :, 5:9])
+    label_box = grid_to_pix(label[..., 0:4])
+    pred_box = grid_to_pix(pred[..., 0:4])
 
     ############################
 
-    label_yx = label[:, :, :, :, 0:2]
-    pred_yx1 = pred[:, :, :, :, 0:2]
-    pred_yx2 = pred[:, :, :, :, 5:7]
+    label_yx = label[..., 0:2]
+    pred_yx = pred[..., 0:2]
 
     ############################
 
-    # label_hw = tf.sqrt(label[:, :, :, :, 2:4])
-    # pred_hw1 = tf.sqrt(abs_no_grad(pred[:, :, :, :, 2:4])) * sign_no_grad(pred[:, :, :, :, 2:4])
-    # pred_hw2 = tf.sqrt(abs_no_grad(pred[:, :, :, :, 7:9])) * sign_no_grad(pred[:, :, :, :, 7:9])
-
-    label_hw = label[:, :, :, :, 2:4]
-    pred_hw1 = pred[:, :, :, :, 2:4]
-    pred_hw2 = pred[:, :, :, :, 7:9]
+    label_hw = label[..., 2:4]
+    pred_hw = pred[..., 2:4]
 
     ############################
 
-    label_conf = label[:, :, :, :, 4]
-    pred_conf1 = pred[:, :, :, :, 4]
-    pred_conf2 = pred[:, :, :, :, 9]
+    label_conf = label[..., 4]
+    pred_conf = pred[..., 4]
 
     ############################
 
     label_cat = tf.one_hot(cat, depth=2)
-    pred_cat1 = pred[:, :, :, :, 10:12]
-    pred_cat2 = pred[:, :, :, :, 12:14]
+    pred_cat = pred[..., 5:7]
 
     ############################
 
-    iou = calc_iou(pred_box1, pred_box2, label_box)
-    # resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
-    # pretty sure less/greater->bool is ideal because we use this thing in tf.where below
-    # resp_box = tf.less(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
-    # we are a moron. tf.where -> if resp_box: 0 else: 1 ...
-    resp_box = tf.greater(iou[:, :, :, :, 0], iou[:, :, :, :, 1])
-
-    obj_mask1 = obj * tf.cast(tf.greater_equal(iou[:, :, :, :, 0], iou[:, :, :, :, 1]), tf.float32)
-    obj_mask2 = obj * tf.cast(tf.greater      (iou[:, :, :, :, 1], iou[:, :, :, :, 0]), tf.float32)
-
-    no_obj_mask1 = 1 - obj_mask1
-    no_obj_mask2 = 1 - obj_mask2
+    iou = calc_iou(pred_box, label_box)
+    iou = tf.transpose(iou, (0, 1, 3, 4, 2))
+    resp_box = tf.math.argmax(iou, axis=4)
 
     ######################################
 
-    loss_yx1 = tf.reduce_sum(tf.square(pred_yx1 - label_yx), axis=4)
-    loss_yx2 = tf.reduce_sum(tf.square(pred_yx2 - label_yx), axis=4)
-    yx_loss = 5. * obj * vld * tf.where(resp_box, loss_yx1, loss_yx2)
+    yx_loss = 5. * obj * vld * tf.reduce_sum(tf.square(pred_yx - label_yx), axis=-1)    
+    yx_loss = tf.transpose(yx_loss, (0, 1, 3, 4, 2))
+    yx_loss = tf.gather(yx_loss, resp_box, axis=4, batch_dims=4)
     yx_loss = tf.reduce_mean(tf.reduce_sum(yx_loss, axis=[2, 3]))
-
+    
     ######################################
 
-    loss_hw1 = tf.reduce_sum(tf.square(pred_hw1 - label_hw), axis=4)
-    loss_hw2 = tf.reduce_sum(tf.square(pred_hw2 - label_hw), axis=4)
-    hw_loss = 5. * obj * vld * tf.where(resp_box, loss_hw1, loss_hw2)
+    hw_loss = 5. * obj * vld * tf.reduce_sum(tf.square(pred_hw - label_hw), axis=-1)    
+    hw_loss = tf.transpose(hw_loss, (0, 1, 3, 4, 2))
+    hw_loss = tf.gather(hw_loss, resp_box, axis=4, batch_dims=4)
     hw_loss = tf.reduce_mean(tf.reduce_sum(hw_loss, axis=[2, 3]))
 
     ######################################
 
-    '''
-    loss_obj1 = tf.square(pred_conf1 - label_conf)
-    loss_obj2 = tf.square(pred_conf2 - label_conf)
-    obj_loss = 1. * obj * vld * tf.where(resp_box, loss_obj1, loss_obj2)
-    '''
-
-    loss_obj1 = tf.square(pred_conf1 - tf.stop_gradient(iou[:, :, :, :, 0])) * obj_mask1
-    loss_obj2 = tf.square(pred_conf2 - tf.stop_gradient(iou[:, :, :, :, 1])) * obj_mask2
-    obj_loss = 1. * vld * (loss_obj1 + loss_obj2)
-    obj_loss = tf.reduce_mean(tf.reduce_sum(obj_loss, axis=[2, 3]))
+    conf_loss = tf.transpose(1. * vld * pred_conf, (0, 1, 3, 4, 2))
+    conf_loss = tf.square(conf_loss - tf.stop_gradient(iou))
+    conf_loss = tf.gather(conf_loss, resp_box, axis=4, batch_dims=4)
+    conf_loss = tf.reduce_mean(tf.reduce_sum(conf_loss, axis=[2, 3]))
 
     ######################################    
 
-    '''
-    loss_no_obj1 = tf.square(pred_conf1 - label_conf)
-    loss_no_obj2 = tf.square(pred_conf2 - label_conf)
-    no_obj_loss = 0.5 * no_obj * vld * tf.where(resp_box, loss_no_obj1, loss_no_obj2)
-    '''
-
-    loss_no_obj1 = tf.square(pred_conf1) * no_obj_mask1
-    loss_no_obj2 = tf.square(pred_conf2) * no_obj_mask2
-    no_obj_loss = 0.5 * vld * (loss_no_obj1 + loss_no_obj2)
-    no_obj_loss = tf.reduce_mean(tf.reduce_sum(no_obj_loss, axis=[2, 3]))
+    none_loss = tf.transpose(0.5 * vld * pred_conf, (0, 1, 3, 4, 2))
+    none_loss = tf.square(none_loss)
+    none_loss = tf.gather(none_loss, resp_box, axis=4, batch_dims=4)
+    none_loss = tf.reduce_mean(tf.reduce_sum(none_loss, axis=[2, 3]))
 
     ######################################
 
-    '''
-    conf_loss1 = tf.square(pred_conf1 - iou[:, :, :, :, 0])
-    conf_loss2 = tf.square(pred_conf2 - iou[:, :, :, :, 1])
-    conf_loss = tf.where()
-    '''
-
-    ######################################
-
-    # (1)
-    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
-    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
-
-    cat_loss1 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat1)
-    cat_loss2 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat2)
-    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
-
+    pred_cat = tf.repeat(pred_cat, 8, 1)
+    label_cat = tf.repeat(label_cat, 5, 2)
+    cat_loss = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat)
+    cat_loss = tf.transpose(cat_loss, (0, 1, 3, 4, 2))
+    cat_loss = tf.gather(cat_loss, resp_box, axis=4, batch_dims=4)
     cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
-
-    # (2)
-    '''
-    cat_loss = 2. * obj * vld * tf.reduce_sum(tf.square(pred_cat - label_cat), axis=4)
-    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
-    '''
-
-    # (3)
-    '''
-    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
-    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
-
-    cat_loss1 = 2. * obj * vld * tf.reduce_sum(tf.constant([1, 10], dtype=tf.float32) * tf.square(pred_cat1 - label_cat), axis=4)
-    cat_loss2 = 2. * obj * vld * tf.reduce_sum(tf.constant([1, 10], dtype=tf.float32) * tf.square(pred_cat2 - label_cat), axis=4)
-    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
-
-    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
-    '''
-
-    # 228,123 cars and 27,658 pedestrians bounding boxes
-    # (4)
-    # lol - this is wrong.
-    '''
-    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
-    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
-
-    car_loss1 = obj * vld * tf.square(pred_cat1[..., 0] - label_cat[..., 0])
-    ped_loss1 = obj * vld * tf.square(pred_cat1[..., 1] - label_cat[..., 1]) * 10
-    cat_loss1 = car_loss1 + ped_loss1
-
-    car_loss2 = obj * vld * tf.square(pred_cat2[..., 0] - label_cat[..., 0])
-    ped_loss2 = obj * vld * tf.square(pred_cat2[..., 1] - label_cat[..., 1]) * 10
-    cat_loss2 = car_loss2 + ped_loss2
-
-    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
-    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
-    '''
-
-    # (5)
-    '''
-    pred_cat1 = tf.repeat(pred_cat1, 8, 1)
-    pred_cat2 = tf.repeat(pred_cat2, 8, 1)
-
-    cat_loss1 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat1)
-    cat_loss2 = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat2)
-
-    cat_loss = tf.where(resp_box, cat_loss1, cat_loss2)
-    cat_loss = tf.where(tf.equal(cat, tf.constant(1)), cat_loss * 10, cat_loss)
-
-    cat_loss = 2 * tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
-    '''
-
-    ######################################
-
-    # print (yx_loss.numpy(), hw_loss.numpy(), obj_loss.numpy(), no_obj_loss.numpy(), cat_loss.numpy())
     
-    loss = yx_loss + hw_loss + obj_loss + no_obj_loss + cat_loss
-    return loss, (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss)
+    ######################################
+    
+    loss = yx_loss + hw_loss + conf_loss + none_loss + cat_loss
+    return loss, (yx_loss, hw_loss, conf_loss, none_loss, cat_loss)
 
 
 

@@ -85,7 +85,7 @@ res_block2(512,  512, 1, weights=weights), # 5, 6
 res_block1(512,  512, 1, weights=weights), # 5, 6
 
 dense_block(5*6*512, 2048, weights=weights, dropout=dropout),
-dense_block(2048, 5*6*14, weights=weights, relu=False),
+dense_block(2048, 5*5*6*7, relu=False),
 ])
 
 params = model.get_params()
@@ -100,7 +100,7 @@ batch_size_tf = tf.constant(args.batch_size)
 def gradients(model, x, y):
     with tf.GradientTape() as tape:
         out = model.train(x)
-        out = tf.reshape(out, (args.batch_size, 5, 6, 14))
+        out = tf.reshape(out, (args.batch_size, 5, 5, 6, 7))
         loss, losses = yolo_loss(batch_size_tf, out, y)
 
     grad = tape.gradient(loss, params)
@@ -170,7 +170,7 @@ def collect_filenames(path):
 
 ####################################
 
-if args.train: filenames = collect_filenames('./dataset/train')
+if args.train: filenames = collect_filenames('./dataset/val')
 else:          filenames = collect_filenames('./dataset/val')
 
 dataset = tf.data.TFRecordDataset(filenames)
