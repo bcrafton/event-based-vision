@@ -170,21 +170,23 @@ def collect_filenames(path):
     return filenames
 
 ###########################################################
-'''
+
 train_path  = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 val_path    = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
 test_a_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_a/'
 test_b_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_b/'
-'''
-###########################################################
 
+###########################################################
+'''
 train_path = './src_data/'
 val_path = ''
-
+'''
 ###########################################################
 # '''
 records = []
 records = records + collect_filenames(train_path)
+records = records + collect_filenames(val_path)
+records = records + collect_filenames(test_b_path)
 
 for record in records:
     print (record)
