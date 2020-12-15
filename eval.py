@@ -7,6 +7,9 @@ id = results['id']
 true = results['true']
 pred = results['pred']
 
+#print (np.shape(true))
+#print (np.shape(pred))
+
 ###########################3
 
 calc_map(id, true, pred)

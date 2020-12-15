@@ -41,6 +41,7 @@ def write_tfrecord(path, id, frames, label):
 
 ##############################################
 def pick_box(w, h):
+    '''
     kmeans = np.array([[ 14.940544,  41.716927],
                        [ 63.379673,  45.207176],
                        [ 84.09129,   63.219963],
@@ -49,27 +50,50 @@ def pick_box(w, h):
                        [ 44.233715,  32.795734],
                        [106.58469,   83.96504 ],
                        [ 30.385511,  83.227776]])
+    '''
+    #'''
+    kmeans = np.array([[ 47.938934,  35.145702],
+                       [ 96.09451,   74.90686 ],
+                       [ 29.959908,  22.899212],
+                       [ 71.913376,  51.908134],
+                       [ 15.042629,  41.93413 ],
+                       [ 30.742947,  84.163376],
+                       [133.14471,  112.522   ]])
+    #'''
+    '''
+    kmeans = np.array([[ 47.44867,   34.58769 ],
+                       [ 96.03882,   74.88576 ],
+                       [ 27.881718,  24.065853],
+                       [130.79675,  113.888275],
+                       [ 71.68791,   51.829678],
+                       [ 23.047924,  64.48398 ]])
+    '''
 
     wh = np.array([w, h])
-    wh     = wh     / np.sqrt(np.prod(wh))
-    kmeans = kmeans / np.sqrt(np.prod(kmeans, axis=1, keepdims=True))
-    assert (np.all( np.absolute(1. - np.prod(kmeans, axis=1)) < 1e-9 ))
+    # wh     = wh     / np.sqrt(np.prod(wh))
+    # kmeans = kmeans / np.sqrt(np.prod(kmeans, axis=1, keepdims=True))
+    # assert (np.all( np.absolute(1. - np.prod(kmeans, axis=1)) < 1e-9 ))
 
     i = np.prod(np.minimum(kmeans, wh), axis=1)
     u = np.prod(wh) + np.prod(kmeans, axis=1) - i
     iou = i / np.maximum(np.maximum(1e-10, i), u)
     
     idx = np.argmax(iou)
-    return idx, kmeans[idx]
+    return idx, iou[idx], kmeans[idx]
 
+counts = np.zeros(7)
+ious = np.zeros(7)
 def detection(boxes):
+    global counts, ious
     nbox, box_size = np.shape(boxes)
     nbox = min(8, nbox)
-    det_np = np.zeros(shape=(8, 8, 5, 6, 8))
+    det_np = np.zeros(shape=(8, 7, 5, 6, 8))
     for box_idx in range(nbox):
 
         _, x, y, w, h, c, _, _ = boxes[box_idx]
-        idx, box = pick_box(w, h)
+        idx, iou, box = pick_box(w, h)
+        counts[idx] += 1
+        ious[idx] += iou
 
         x = np.clip(x + 0.5 * w, 0, 288)
         y = np.clip(y + 0.5 * h, 0, 240)
@@ -79,8 +103,8 @@ def detection(boxes):
 
         x = (x - xc * 48.) / 48. # might want to clip this to zero
         y = (y - yc * 48.) / 48. # might want to clip this to zero
-        w = np.sqrt(np.log(w / box[0]))
-        h = np.sqrt(np.log(h / box[1]))
+        w = w / box[0]
+        h = h / box[1]
 
         x = np.clip(x, 0, 1)
         y = np.clip(y, 0, 1)
@@ -89,10 +113,10 @@ def detection(boxes):
 
         det_np[box_idx, idx, yc, xc, 0:4] = np.array([y, x, h, w])
         det_np[box_idx, idx, yc, xc, 4] = 1.
-        det_np[box_idx, idx,  :,  :, 5] = 1.
+        det_np[box_idx,   :,  :,  :, 5] = 1.
         det_np[box_idx, idx, yc, xc, 5] = 0.
         det_np[box_idx, idx, yc, xc, 6] = c
-        det_np[box_idx, idx,  :,  :, 7] = 1.
+        det_np[box_idx,   :,  :,  :, 7] = 1.
 
     return det_np
 
@@ -102,9 +126,10 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
     frame = np.zeros((240, 304, 3), dtype=np.uint8)
     id = 0
+    global counts, ious
 
     for video_idx in range(len(td_files)):
-        print (video_idx)
+        print (video_idx, counts, np.around(100 * ious / counts))
     
         video = PSEELoader(td_files[video_idx])
         box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
@@ -182,7 +207,7 @@ train_path = './src_data/'
 val_path = ''
 '''
 ###########################################################
-# '''
+'''
 records = []
 records = records + collect_filenames(train_path)
 records = records + collect_filenames(val_path)
@@ -192,9 +217,9 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-# '''
-###########################################################
 '''
+###########################################################
+# '''
 records = []
 records = records + collect_filenames(test_a_path)
 # records = records + collect_filenames(test_b_path)
@@ -203,7 +228,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-'''
+# '''
 ###########################################################
     
     

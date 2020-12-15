@@ -45,36 +45,6 @@ def softmax(x):
 
 ####################################
 
-'''
-def calc_iou(boxes):
-    N = len(boxes)
-    front = []
-    back = []
-    for i in range(N):
-        for j in range(i + 1, N):
-            box1 = boxes[i]
-            box2 = boxes[j]
-            yA = max(box1[0],           box2[0])
-            yB = min(box1[0] + box1[2], box2[0] + box2[2])
-            xA = max(box1[1],           box2[1])
-            xB = min(box1[1] + box1[3], box2[1] + box2[3])
-            inter = max(0, yB - yA) * max(0, xB - xA)
-
-            box1_area = box1[2] * box1[3]
-            box2_area = box2[2] * box2[3]
-            iou = inter / max(1e-10, inter, box1_area + box2_area - inter)
-          
-            if (iou > 0.85):
-                back.append(j)
-
-        if i not in back:
-            front.append(i)
-
-    front.extend(back)
-    return front
-'''
-####################################
-
 offset_np = np.array([
 [  [0, 0],   [0, 48],   [0, 96],   [0, 144],   [0, 192],   [0, 240]],
 [ [48, 0],  [48, 48],  [48, 96],  [48, 144],  [48, 192],  [48, 240]],
@@ -83,9 +53,15 @@ offset_np = np.array([
 [[192, 0], [192, 48], [192, 96], [192, 144], [192, 192], [192, 240]]
 ])
 
+kmeans = np.array([[ 47.938934,  35.145702],
+                   [ 96.09451,   74.90686 ],
+                   [ 29.959908,  22.899212],
+                   [ 71.913376,  51.908134],
+                   [ 15.042629,  41.93413 ],
+                   [ 30.742947,  84.163376],
+                   [133.14471,  112.522   ]])
+
 def grid_to_pix(box):
-    box[..., 2] = np.square(box[..., 2]) * 240.
-    box[..., 3] = np.square(box[..., 3]) * 288.
     box[..., 0] = 48. * box[..., 0] + offset_np[..., 0] - 0.5 * box[..., 2]
     box[..., 1] = 48. * box[..., 1] + offset_np[..., 1] - 0.5 * box[..., 3]
 
@@ -105,6 +81,16 @@ def calc_map(id, truth, pred):
     truth = np.copy(truth)
     pred = np.copy(pred)
 
+    print (np.shape(pred))
+    print (np.shape(truth))
+
+    # [12800, 8, 7, 5, 6, 8]
+    truth[..., 2] = truth[..., 2] * np.reshape(kmeans[:, 1], (1, 1, 7, 1, 1))
+    truth[..., 3] = truth[..., 3] * np.reshape(kmeans[:, 0], (1, 1, 7, 1, 1))
+    # [12800, 7, 5, 6, 7]
+    pred[..., 2] = np.exp(pred[..., 2]) * np.reshape(kmeans[:, 1], (1, 7, 1, 1))
+    pred[..., 3] = np.exp(pred[..., 3]) * np.reshape(kmeans[:, 0], (1, 7, 1, 1))
+
     # nb, nd, ny, nx, nbox = np.shape(truth)
     # print (np.shape(truth)) # (16, 8, 5, 6, 8)
     # print (np.shape(pred))  # (16, 5, 6, 12)
@@ -114,20 +100,20 @@ def calc_map(id, truth, pred):
     truth_list = []
     det_list = []
     for n in range(N):
-        
+
         #####################
         #####################
         #####################
         
         dets = []
 
-        boxes   = grid_to_pix(truth[n, :, :, :, 0:4])
-        objs    = truth[n, :, :, :, 4]
-        no_objs = truth[n, :, :, :, 5]
-        cats    = truth[n, :, :, :, 6]
-        vld     = truth[n, :, :, :, 7]
+        boxes   = grid_to_pix(truth[n, :, :, :, :, 0:4])
+        objs    = truth[n, :, :, :, :, 4]
+        no_objs = truth[n, :, :, :, :, 5]
+        cats    = truth[n, :, :, :, :, 6]
+        vld     = truth[n, :, :, :, :, 7]
 
-        obj = np.where(truth[n, :, :, :, 4] == 1)
+        obj = np.where(truth[n, :, :, :, :, 4] == 1)
         box = boxes[obj]
         cat = cats[obj].astype(int)
 
@@ -146,35 +132,23 @@ def calc_map(id, truth, pred):
 
         dets = []
 
-        cat1  = np.argmax(pred[n][:, :, 10:12], axis=-1).reshape(-1).astype(int)
-        box1  = grid_to_pix(pred[n][:, :, 0:4]).reshape(-1, 4)
-        conf1 = pred[n][:, :, 4].reshape(-1)
-        # apply tf.nn.softmax to cat
-        conf1 = conf1 * np.max(softmax(pred[n][:, :, 10:12]), axis=-1).reshape(-1)
-
-        cat2  = np.argmax(pred[n][:, :, 12:14], axis=-1).reshape(-1).astype(int)
-        box2  = grid_to_pix(pred[n][:, :, 5:9]).reshape(-1, 4)
-        conf2 = pred[n][:, :, 9].reshape(-1)
-        # apply tf.nn.softmax to cat
-        conf2 = conf2 * np.max(softmax(pred[n][:, :, 12:14]), axis=-1).reshape(-1)
-
-        box = np.concatenate((box1, box2), axis=0)
-        conf = np.concatenate((conf1, conf2), axis=0)
-        cat = np.concatenate((cat1, cat2), axis=0).astype(int)
+        box  = grid_to_pix(pred[n, :, :, :, 0:4]).reshape(-1, 4)
+        conf = pred[n, :, :, :, 4].reshape(-1)
+        cat  = np.argmax(pred[n, :, :, :, 5:7], axis=-1).reshape(-1)
 
         order = np.argsort(conf)[::-1]
         box = box[order]
         conf = conf[order]
         cat = cat[order]
-        
+
         #####################
-        
+        '''       
         soft_nms(box, conf)
         order = np.argsort(conf)[::-1]
         box = box[order]
         conf = conf[order]
         cat = cat[order]
-
+        '''
         #####################
 
         ndet = len(box)
@@ -190,10 +164,10 @@ def calc_map(id, truth, pred):
         #####################
         #####################
         
-        src_image = plt.imread('./dataset/images/%d.jpg' % (id[n]))
+        # src_image = plt.imread('./dataset/images/%d.jpg' % (id[n]))
 
-        dst_image = './results/%d.jpg' % (id[n])
-        draw_box(dst_image, src_image, truth_n, pred_n)
+        # dst_image = './results/%d.jpg' % (id[n])
+        # draw_box(dst_image, src_image, truth_n, pred_n)
 
         #####################
 

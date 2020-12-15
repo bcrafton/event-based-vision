@@ -70,12 +70,16 @@ def grid_to_pix(box):
 
 #####################################
 
-files = collect_filenames('./dataset/val')
+files = collect_filenames('./dataset/train_v1')
 tfrecord = tf.data.TFRecordDataset(files)
 dataset = tfrecord.map(extract)
 
+count = 0
 boxes = []
 for (id, image, label) in dataset:
+    count += 1
+    if count % 100 == 0:
+        print (count)
     label = label.numpy()
     # print (np.shape(label))
     # (8, 5, 6, 8)
@@ -91,11 +95,21 @@ boxes = boxes[:, 2:4]
 #####################################
 
 from sklearn.cluster import KMeans
+
+kmeans = KMeans(n_clusters=9).fit(boxes)
+print (kmeans.cluster_centers_)
+
 kmeans = KMeans(n_clusters=8).fit(boxes)
 print (kmeans.cluster_centers_)
 
+kmeans = KMeans(n_clusters=7).fit(boxes)
+print (kmeans.cluster_centers_)
 
+kmeans = KMeans(n_clusters=6).fit(boxes)
+print (kmeans.cluster_centers_)
 
+kmeans = KMeans(n_clusters=5).fit(boxes)
+print (kmeans.cluster_centers_)
 
 
 

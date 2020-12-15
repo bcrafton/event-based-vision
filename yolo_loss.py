@@ -1,4 +1,5 @@
 
+import numpy as np
 import tensorflow as tf
 
 offset_np = [
@@ -8,14 +9,22 @@ offset_np = [
 [[144, 0], [144, 48], [144, 96], [144, 144], [144, 192], [144, 240]], 
 [[192, 0], [192, 48], [192, 96], [192, 144], [192, 192], [192, 240]]
 ]
-
 offset = tf.constant(offset_np, dtype=tf.float32)
+
+kmeans = np.array([[ 47.938934,  35.145702],
+                   [ 96.09451,   74.90686 ],
+                   [ 29.959908,  22.899212],
+                   [ 71.913376,  51.908134],
+                   [ 15.042629,  41.93413 ],
+                   [ 30.742947,  84.163376],
+                   [133.14471,  112.522   ]])
+kmeans = tf.constant(kmeans, dtype=tf.float32)
 
 @tf.function(experimental_relax_shapes=False)
 def grid_to_pix(box):
     pix_box_yx = 48. * box[..., 0:2] + offset
-    pix_box_h = tf.square(box[..., 2:3]) * 240.
-    pix_box_w = tf.square(box[..., 3:4]) * 288.
+    pix_box_h = box[..., 2:3] * tf.reshape(kmeans[:, 1], (1, 1, 7, 1, 1, 1))
+    pix_box_w = box[..., 3:4] * tf.reshape(kmeans[:, 0], (1, 1, 7, 1, 1, 1))
     pix_box = tf.concat((pix_box_yx, pix_box_h, pix_box_w), axis=-1)
     return pix_box
 
@@ -66,8 +75,9 @@ def yolo_loss(batch_size, pred, label):
     # no_obj = [4, -1, 7, 7]
     # cat    = [4, -1, 7, 7]
 
-    pred   = tf.reshape(pred,  [batch_size, 1, 5, 5, 6, 7])
-    label  = tf.reshape(label, [batch_size, 8, 1, 5, 6, 8])
+    pred   = tf.reshape(pred,  [batch_size, 1, 7, 5, 6, 7])
+
+    label  = tf.reshape(label, [batch_size, 8, 7, 5, 6, 8])
     obj    = label[..., 4]
     no_obj = label[..., 5]
     cat    = tf.cast(label[..., 6], dtype=tf.int32)
@@ -76,7 +86,10 @@ def yolo_loss(batch_size, pred, label):
     ######################################
 
     label_box = grid_to_pix(label[..., 0:4])
-    pred_box = grid_to_pix(pred[..., 0:4])
+    pred_box_hw = tf.exp(pred[..., 2:4])
+    pred_box_yx =        pred[..., 0:2]
+    pred_box = tf.concat((pred_box_yx, pred_box_hw), axis=-1)
+    pred_box = grid_to_pix(pred_box)
 
     ############################
 
@@ -101,45 +114,53 @@ def yolo_loss(batch_size, pred, label):
     ############################
 
     iou = calc_iou(pred_box, label_box)
-    iou = tf.transpose(iou, (0, 1, 3, 4, 2))
-    resp_box = tf.math.argmax(iou, axis=4)
+    # tf.print (tf.shape(iou), tf.shape(obj))
 
     ######################################
 
     yx_loss = 5. * obj * vld * tf.reduce_sum(tf.square(pred_yx - label_yx), axis=-1)    
-    yx_loss = tf.transpose(yx_loss, (0, 1, 3, 4, 2))
-    yx_loss = tf.gather(yx_loss, resp_box, axis=4, batch_dims=4)
-    yx_loss = tf.reduce_mean(tf.reduce_sum(yx_loss, axis=[2, 3]))
+    # yx_loss = tf.transpose(yx_loss, (0, 1, 3, 4, 2))
+    # yx_loss = tf.gather(yx_loss, resp_box, axis=4, batch_dims=4)
+    yx_loss = tf.reduce_mean(tf.reduce_sum(yx_loss, axis=[2, 3, 4]))
     
     ######################################
 
-    hw_loss = 5. * obj * vld * tf.reduce_sum(tf.square(pred_hw - label_hw), axis=-1)    
-    hw_loss = tf.transpose(hw_loss, (0, 1, 3, 4, 2))
-    hw_loss = tf.gather(hw_loss, resp_box, axis=4, batch_dims=4)
-    hw_loss = tf.reduce_mean(tf.reduce_sum(hw_loss, axis=[2, 3]))
+    hw_loss = 5. * obj * vld * tf.reduce_sum(tf.square(tf.exp(pred_hw) - label_hw), axis=-1)    
+    # hw_loss = tf.transpose(hw_loss, (0, 1, 3, 4, 2))
+    # hw_loss = tf.gather(hw_loss, resp_box, axis=4, batch_dims=4)
+    hw_loss = tf.reduce_mean(tf.reduce_sum(hw_loss, axis=[2, 3, 4]))
 
     ######################################
 
+    '''
     conf_loss = tf.transpose(1. * vld * pred_conf, (0, 1, 3, 4, 2))
     conf_loss = tf.square(conf_loss - tf.stop_gradient(iou))
     conf_loss = tf.gather(conf_loss, resp_box, axis=4, batch_dims=4)
     conf_loss = tf.reduce_mean(tf.reduce_sum(conf_loss, axis=[2, 3]))
+    '''
+    
+    conf_loss = 1. * obj * vld * tf.square(pred_conf - 1)
+    conf_loss = tf.reduce_mean(tf.reduce_sum(conf_loss, axis=[2, 3, 4]))
 
     ######################################    
-
+    
+    '''
     none_loss = tf.transpose(0.5 * vld * pred_conf, (0, 1, 3, 4, 2))
     none_loss = tf.square(none_loss)
     none_loss = tf.gather(none_loss, resp_box, axis=4, batch_dims=4)
     none_loss = tf.reduce_mean(tf.reduce_sum(none_loss, axis=[2, 3]))
+    '''
+    
+    none_loss = 0.5 * no_obj * vld * tf.square(pred_conf)
+    none_loss = tf.reduce_mean(tf.reduce_sum(none_loss, axis=[2, 3, 4]))
 
     ######################################
 
     pred_cat = tf.repeat(pred_cat, 8, 1)
-    label_cat = tf.repeat(label_cat, 5, 2)
     cat_loss = obj * vld * tf.nn.softmax_cross_entropy_with_logits(labels=label_cat, logits=pred_cat)
-    cat_loss = tf.transpose(cat_loss, (0, 1, 3, 4, 2))
-    cat_loss = tf.gather(cat_loss, resp_box, axis=4, batch_dims=4)
-    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3]))
+    # cat_loss = tf.transpose(cat_loss, (0, 1, 3, 4, 2))
+    # cat_loss = tf.gather(cat_loss, resp_box, axis=4, batch_dims=4)
+    cat_loss = tf.reduce_mean(tf.reduce_sum(cat_loss, axis=[2, 3, 4]))
     
     ######################################
     
