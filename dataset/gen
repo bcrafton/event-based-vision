@@ -1,0 +1,2 @@
+
+nohup python generate_tfrecord_anchor24.py &

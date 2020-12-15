@@ -139,7 +139,7 @@ def yolo_loss(batch_size, pred, label):
     conf_loss = tf.reduce_mean(tf.reduce_sum(conf_loss, axis=[2, 3]))
     '''
     
-    conf_loss = 1. * obj * vld * tf.square(pred_conf - 1)
+    conf_loss = 1. * obj * vld * tf.square(pred_conf - tf.stop_gradient(iou))
     conf_loss = tf.reduce_mean(tf.reduce_sum(conf_loss, axis=[2, 3, 4]))
 
     ######################################    
