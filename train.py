@@ -85,7 +85,7 @@ res_block2(512,  512, 1, weights=weights), # 5, 6
 res_block1(512,  512, 1, weights=weights), # 5, 6
 
 dense_block(5*6*512, 2048, weights=weights, dropout=dropout),
-dense_block(2048, 7*5*6*7, weights=weights, relu=False),
+dense_block(2048, 7*10*12*7, relu=False),
 ])
 
 params = model.get_params()
@@ -100,7 +100,7 @@ batch_size_tf = tf.constant(args.batch_size)
 def gradients(model, x, y):
     with tf.GradientTape() as tape:
         out = model.train(x)
-        out = tf.reshape(out, (args.batch_size, 7, 5, 6, 7))
+        out = tf.reshape(out, (args.batch_size, 7, 10, 12, 7))
         loss, losses = yolo_loss(batch_size_tf, out, y)
 
     grad = tape.gradient(loss, params)
@@ -112,7 +112,7 @@ def gradients(model, x, y):
 # @tf.function(experimental_relax_shapes=False)
 def collect(model, x):
     out = model.collect(x)
-    out = tf.reshape(out, (args.batch_size, 7, 5, 6, 7))
+    out = tf.reshape(out, (args.batch_size, 7, 10, 12, 7))
     return out
 
 ####################################
@@ -120,7 +120,7 @@ def collect(model, x):
 @tf.function(experimental_relax_shapes=False)
 def predict(model, x):
     out = model.predict(x)
-    out = tf.reshape(out, (args.batch_size, 7, 5, 6, 7))
+    out = tf.reshape(out, (args.batch_size, 7, 10, 12, 7))
     return out
 
 ####################################
@@ -146,7 +146,7 @@ def extract_fn(record):
 
     label = tf.io.decode_raw(sample['label_raw'], tf.float32)
     label = tf.cast(label, dtype=tf.float32)
-    label = tf.reshape(label, (8, 7, 5, 6, 8))
+    label = tf.reshape(label, (8, 7, 10, 12, 8))
 
     image = tf.io.decode_raw(sample['image_raw'], tf.uint8)
     image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
@@ -170,8 +170,8 @@ def collect_filenames(path):
 
 ####################################
 
-if args.train: filenames = collect_filenames('./dataset/train_v1')
-else:          filenames = collect_filenames('./dataset/val_v1')
+if args.train: filenames = collect_filenames('./dataset/train')
+else:          filenames = collect_filenames('./dataset/val')
 
 dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
