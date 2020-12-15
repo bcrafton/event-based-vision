@@ -47,10 +47,10 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo_anchor.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor_iou.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo_anchor_bn.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor_iou_bn.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -170,8 +170,8 @@ def collect_filenames(path):
 
 ####################################
 
-if args.train: filenames = collect_filenames('./dataset/train')
-else:          filenames = collect_filenames('./dataset/val')
+if args.train: filenames = collect_filenames('./dataset/train_v1')
+else:          filenames = collect_filenames('./dataset/val_v1')
 
 dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
