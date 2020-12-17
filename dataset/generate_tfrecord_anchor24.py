@@ -207,7 +207,7 @@ for record in records:
 play_files_parallel('./train', records, skip=0, delta_t=20000)
 '''
 ###########################################################
-# '''
+'''
 train_path  = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 val_path    = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
 test_b_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_b/'
@@ -221,9 +221,9 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-# '''
-###########################################################
 '''
+###########################################################
+# '''
 test_a_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_a/'
 
 records = []
@@ -233,7 +233,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-'''
+# '''
 ###########################################################
     
     

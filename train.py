@@ -47,10 +47,10 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo_anchor_iou.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor_10x12.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo_anchor_iou_bn.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor_10x12_bn.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -85,7 +85,7 @@ res_block2(512,  512, 1, weights=weights), # 5, 6
 res_block1(512,  512, 1, weights=weights), # 5, 6
 
 dense_block(5*6*512, 2048, weights=weights, dropout=dropout),
-dense_block(2048, 7*10*12*7, relu=False),
+dense_block(2048, 7*10*12*7, weights=weights, relu=False),
 ])
 
 params = model.get_params()
