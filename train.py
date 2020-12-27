@@ -7,7 +7,7 @@ import sys
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
-parser.add_argument('--batch_size', type=int, default=32)
+parser.add_argument('--batch_size', type=int, default=8)
 parser.add_argument('--lr', type=float, default=1e-3)
 parser.add_argument('--gpu', type=int, default=0)
 parser.add_argument('--train', type=int, default=1)
@@ -47,45 +47,41 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo_anchor_10x12.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo_anchor_10x12_bn.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
 
-# 240, 288
+# 240, 432
 model = model(layers=[
-conv_block((7,7,12,64), 1, weights=weights), # 240, 288
-
-max_pool(s=3, p=3),
-
-res_block1(64,   64, 1, weights=weights), # 80, 96
-res_block1(64,   64, 1, weights=weights), # 80, 96
-
+conv_block((7,7,1,64), 1), # 256, 448
 max_pool(s=2, p=2),
 
-res_block2(64,   128, 1, weights=weights), # 40, 48
-res_block1(128,  128, 1, weights=weights), # 40, 48
-
+res_block1(64, 64, 1, weights=weights), # 128, 224
+res_block1(64, 64, 1, weights=weights), # 128, 224
 max_pool(s=2, p=2),
 
-res_block2(128,  256, 1, weights=weights), # 20, 24
-res_block1(256,  256, 1, weights=weights), # 20, 24
-
+res_block2(64,   128, 1, weights=weights), # 64, 112
+res_block1(128,  128, 1, weights=weights), # 64, 112
 max_pool(s=2, p=2),
 
-res_block2(256,  512, 1, weights=weights), # 10, 12
-res_block1(512,  512, 1, weights=weights), # 10, 12
-
+res_block2(128,  256, 1, weights=weights), # 32, 56
+res_block1(256,  256, 1, weights=weights), # 32, 56
 max_pool(s=2, p=2),
 
-res_block2(512,  512, 1, weights=weights), # 5, 6
-res_block1(512,  512, 1, weights=weights), # 5, 6
+res_block2(256,  512, 1, weights=weights), # 16, 28
+res_block1(512,  512, 1, weights=weights), # 16, 28
+max_pool(s=2, p=2),
 
-dense_block(5*6*512, 2048, weights=weights, dropout=dropout),
-dense_block(2048, 7*10*12*7, weights=weights, relu=False),
+res_block2(512,  512, 1, weights=weights), # 8, 14
+res_block1(512,  512, 1, weights=weights), # 8, 14
+max_pool(s=2, p=2),
+
+dense_block(4*7*512, 2048, dropout=dropout),
+dense_block(2048, 7*8*14*12, relu=False),
 ])
 
 params = model.get_params()
@@ -100,7 +96,7 @@ batch_size_tf = tf.constant(args.batch_size)
 def gradients(model, x, y):
     with tf.GradientTape() as tape:
         out = model.train(x)
-        out = tf.reshape(out, (args.batch_size, 7, 10, 12, 7))
+        out = tf.reshape(out, (args.batch_size, 7, 8, 14, 12))
         loss, losses = yolo_loss(batch_size_tf, out, y)
 
     grad = tape.gradient(loss, params)
@@ -112,7 +108,7 @@ def gradients(model, x, y):
 # @tf.function(experimental_relax_shapes=False)
 def collect(model, x):
     out = model.collect(x)
-    out = tf.reshape(out, (args.batch_size, 7, 10, 12, 7))
+    out = tf.reshape(out, (args.batch_size, 7, 8, 14, 12))
     return out
 
 ####################################
@@ -120,7 +116,7 @@ def collect(model, x):
 @tf.function(experimental_relax_shapes=False)
 def predict(model, x):
     out = model.predict(x)
-    out = tf.reshape(out, (args.batch_size, 7, 10, 12, 7))
+    out = tf.reshape(out, (args.batch_size, 7, 8, 14, 12))
     return out
 
 ####################################
@@ -146,11 +142,11 @@ def extract_fn(record):
 
     label = tf.io.decode_raw(sample['label_raw'], tf.float32)
     label = tf.cast(label, dtype=tf.float32)
-    label = tf.reshape(label, (8, 7, 10, 12, 8))
+    label = tf.reshape(label, (8, 7, 8, 14, 8))
 
     image = tf.io.decode_raw(sample['image_raw'], tf.uint8)
     image = tf.cast(image, dtype=tf.float32) # this was tricky ... stored as uint8, not float32.
-    image = tf.reshape(image, (240, 288, 12))
+    image = tf.reshape(image, (256, 448, 1))
 
     return [id, image, label]
 

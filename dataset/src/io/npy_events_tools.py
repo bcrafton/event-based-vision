@@ -22,7 +22,7 @@ def stream_td_data(file_handle, buffer, dtype, ev_count=-1):
         - ev_count: number of events
     """
     dat = np.fromfile(file_handle, dtype=dtype, count=ev_count)
-    count = len(dat['ts'])
+    count = len(dat['t'])
     for name, _ in dtype:
         buffer[name][:count] = dat[name]
 
@@ -52,6 +52,10 @@ def parse_header(fhandle):
     start = fhandle.tell()
     # turn numpy.dtype into an iterable list
     ev_type = [(x, str(dtype.fields[x][0])) for x in dtype.names]
+    # filter name to have only t and not ts
+    ev_type = [(name if name != "ts" else "t", desc) for name, desc in ev_type]
+    ev_type = [(name if name != "confidence" else "class_confidence", desc) for name, desc in ev_type]
+    size = (None, None)
     size = (None, None)
 
     return start, ev_type, ev_size, size

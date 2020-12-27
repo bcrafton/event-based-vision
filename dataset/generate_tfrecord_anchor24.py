@@ -41,33 +41,16 @@ def write_tfrecord(path, id, frames, label):
 
 ##############################################
 def pick_box(w, h):
-    '''
-    kmeans = np.array([[ 14.940544,  41.716927],
-                       [ 63.379673,  45.207176],
-                       [ 84.09129,   63.219963],
-                       [142.28989,  126.92114 ],
-                       [ 29.110464,  22.325598],
-                       [ 44.233715,  32.795734],
-                       [106.58469,   83.96504 ],
-                       [ 30.385511,  83.227776]])
-    '''
-    #'''
-    kmeans = np.array([[ 47.938934,  35.145702],
-                       [ 96.09451,   74.90686 ],
-                       [ 29.959908,  22.899212],
-                       [ 71.913376,  51.908134],
-                       [ 15.042629,  41.93413 ],
-                       [ 30.742947,  84.163376],
-                       [133.14471,  112.522   ]])
-    #'''
-    '''
-    kmeans = np.array([[ 47.44867,   34.58769 ],
-                       [ 96.03882,   74.88576 ],
-                       [ 27.881718,  24.065853],
-                       [130.79675,  113.888275],
-                       [ 71.68791,   51.829678],
-                       [ 23.047924,  64.48398 ]])
-    '''
+
+    kmeans = np.array([
+    [106.10298507,   6.06679104],
+    [ 28.18226804, 128.46391753],
+    [120.83213869,  62.27154526],
+    [118.9428337,  116.26340263],
+    [102.66412214, 201.29050042],
+    [128.55952569,  19.9143083 ],
+    [ 61.48116438,  18.5010274 ]
+    ])
 
     wh = np.array([w, h])
     # wh     = wh     / np.sqrt(np.prod(wh))
@@ -87,7 +70,7 @@ def detection(boxes):
     global counts, ious
     nbox, box_size = np.shape(boxes)
     nbox = min(8, nbox)
-    det_np = np.zeros(shape=(8, 7, 10, 12, 8))
+    det_np = np.zeros(shape=(8, 7, 8, 14, 8))
     for box_idx in range(nbox):
 
         _, x, y, w, h, c, _, _ = boxes[box_idx]
@@ -95,14 +78,14 @@ def detection(boxes):
         counts[idx] += 1
         ious[idx] += iou
 
-        x = np.clip(x + 0.5 * w, 0, 288)
-        y = np.clip(y + 0.5 * h, 0, 240)
+        x = np.clip(x + 0.5 * w, 0, 448)
+        y = np.clip(y + 0.5 * h, 0, 256)
 
-        xc = int(np.clip(x // 24, 0, 11))
-        yc = int(np.clip(y // 24, 0, 9))
+        xc = int(np.clip(x // 32, 0, 13))
+        yc = int(np.clip(y // 32, 0, 7))
 
-        x = (x - xc * 24.) / 24. # might want to clip this to zero
-        y = (y - yc * 24.) / 24. # might want to clip this to zero
+        x = (x - xc * 32.) / 32. # might want to clip this to zero
+        y = (y - yc * 32.) / 32. # might want to clip this to zero
         w = w / box[0]
         h = h / box[1]
 
@@ -124,7 +107,7 @@ def detection(boxes):
 
 def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
-    frame = np.zeros((240, 304, 3), dtype=np.uint8)
+    frame = np.zeros((720, 1280, 3), dtype=np.uint8)
     id = 0
     global counts, ious
 
@@ -132,7 +115,7 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
         print (video_idx, counts, np.around(100 * ious / counts))
     
         video = PSEELoader(td_files[video_idx])
-        box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
+        box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_box.npy'))
         
         frames = []
         # frame_idx = 0
@@ -141,24 +124,29 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
             events = video.load_delta_t(delta_t)
             boxes = box_video.load_delta_t(delta_t)
 
-            frame = vis.make_binary_histo(events, img=frame, width=304, height=240)
+            frame = vis.make_binary_histo(events, img=frame, width=1280, height=720)
 
-            assert (np.shape(frame) == (240, 304, 3))
+            assert (np.shape(frame) == (720, 1280, 3))
             frame_preprocess = np.copy(frame[:, :, 0])
 
-            frame_preprocess = cv2.resize(frame_preprocess, (288, 240)) # cv2 takes things as {W,H} even when array is sized {H,W}
+            frame_preprocess = cv2.resize(frame_preprocess, (448, 256)) # cv2 takes things as {W,H} even when array is sized {H,W}
             frames.append(frame_preprocess)
             
             if len(boxes):
+                '''
                 frames = frames[-12:]
                 frames = np.stack(frames, axis=-1)
                 frames_cp = np.copy(frames)
+                '''
+                frames_cp = np.copy(frames[-1])
 
                 boxes_np = []
                 for box in boxes:
                     # t, x, y, w, h
-                    box[1] = round(box[1] * (288 / 304))
-                    box[3] = round(box[3] * (288 / 304))
+                    box[1] = round(box[1] * (448 / 1280))
+                    box[3] = round(box[3] * (448 / 1280))
+                    box[2] = round(box[2] * (256 / 720))
+                    box[4] = round(box[4] * (256 / 720))
                     box_np = np.array(list(box))
                     boxes_np.append(box_np)
                 boxes_np = np.array(boxes_np)
@@ -169,13 +157,8 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
                 ###################################
 
-                if np.shape(frames_cp) == (240, 288, 12):
-                    img = np.mean(frames_cp, axis=-1)
-                    img = img - np.min(img)
-                    std = np.std(img)
-                    if std > 5:
-                        # filename = '%s/%d_%d.tfrecord' % (path, video_idx, frame_idx)
-                        write_tfrecord(path, id, frames_cp, det_np)
+                if np.shape(frames_cp) == (256, 448):
+                    write_tfrecord(path, id, frames_cp, det_np)
 
                 frames = []
                 # frame_idx += 1
@@ -195,7 +178,7 @@ def collect_filenames(path):
     return filenames
 
 ###########################################################
-'''
+
 train_path = './src_data/'
 
 records = []
@@ -205,7 +188,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-'''
+
 ###########################################################
 '''
 train_path  = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
@@ -223,7 +206,7 @@ for record in records:
 play_files_parallel('./train', records, skip=0, delta_t=20000)
 '''
 ###########################################################
-# '''
+'''
 test_a_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_a/'
 
 records = []
@@ -233,7 +216,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-# '''
+'''
 ###########################################################
     
     

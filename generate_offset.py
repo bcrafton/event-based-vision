@@ -5,13 +5,13 @@ np.set_printoptions(threshold=sys.maxsize)
 
 #################################################
 
-x = np.array(range(0, 12)).reshape(1, -1)
-x = np.repeat(x, 10, axis=0) * 24
+x = np.array(range(0, 14)).reshape(1, -1)
+x = np.repeat(x, 8, axis=0) * 32
 # print (x)
 # print (np.shape(x))
 
-y = np.array(range(0, 10)).reshape(-1, 1)
-y = np.repeat(y, 12, axis=1) * 24
+y = np.array(range(0, 8)).reshape(-1, 1)
+y = np.repeat(y, 14, axis=1) * 32
 # print (y)
 # print (np.shape(y))
 
@@ -21,11 +21,11 @@ y = np.repeat(y, 12, axis=1) * 24
 #################################################
 
 out = ''
-for i in range(10):
+for i in range(8):
     out += '['
-    for j in range(12):
+    for j in range(14):
         out += '[%3d, %3d]' % (y[i, j], x[i, j])
-        if (j < 11): out += ', '
+        if (j < 13): out += ', '
         else:        out += '],\n'
 
 print (out)
