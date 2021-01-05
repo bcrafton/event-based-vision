@@ -105,7 +105,8 @@ def collect_filenames(path):
 
 ###########################################################
 
-train_path = './src_data/'
+# train_path = './src_data/'
+train_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 
 records = []
 records = records + collect_filenames(train_path)
