@@ -47,10 +47,10 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo_anchor_10x12.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor.npy', allow_pickle=True).item()
     dropout = True
 else:
-    weights = np.load('models/resnet_yolo_anchor_10x12_bn.npy', allow_pickle=True).item()
+    weights = np.load('models/resnet_yolo_anchor_bn.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -191,7 +191,7 @@ if args.train:
         total_no_obj_loss = 0
         total_cat_loss = 0
 
-        total_loss = 0
+        total_loss = 0 # 1e-6
         total = 0
         start = time.time()
 
@@ -276,11 +276,11 @@ if not args.train:
     ys = np.concatenate(ys, axis=0).astype(np.float32)
     preds = np.concatenate(preds, axis=0).astype(np.float32)
 
-    results = {}
-    results['id'] = ids
-    results['true'] = ys
-    results['pred'] = preds
-    np.save('results', results)
+    # results = {}
+    # results['id'] = ids
+    # results['true'] = ys
+    # results['pred'] = preds
+    # np.save('results', results)
 
     calc_map(ids, ys, preds)
 

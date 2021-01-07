@@ -130,7 +130,9 @@ def yolo_loss(batch_size, pred, label):
     
     ######################################
 
-    hw_loss = 5. * obj * vld * tf.reduce_sum(tf.square(tf.exp(pred_hw) - label_hw), axis=-1)    
+    hw_loss = 5. * obj * vld * tf.reduce_sum(tf.square(tf.exp(pred_hw) - label_hw), axis=-1)
+    # hw_loss = 5. * obj * vld * tf.reduce_sum(tf.square(pred_hw - label_hw), axis=-1)
+
     # hw_loss = tf.transpose(hw_loss, (0, 1, 3, 4, 2))
     # hw_loss = tf.gather(hw_loss, resp_box, axis=4, batch_dims=4)
     hw_loss = tf.reduce_mean(tf.reduce_sum(hw_loss, axis=[2, 3, 4]))

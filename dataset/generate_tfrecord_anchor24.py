@@ -224,10 +224,10 @@ play_files_parallel('./train', records, skip=0, delta_t=20000)
 '''
 ###########################################################
 # '''
-test_a_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/test_a/'
+test_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test'
 
 records = []
-records = records + collect_filenames(test_a_path)
+records = records + collect_filenames(test_path)
 
 for record in records:
     print (record)
