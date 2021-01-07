@@ -1,4 +1,3 @@
-
 """
 small executable to show the content of the Prophesee dataset
 Copyright: (c) 2019-2020 Prophesee
@@ -13,11 +12,59 @@ import numpy as np
 import tensorflow as tf
 import cv2
 import argparse
-
+from scipy import stats
 import matplotlib.pyplot as plt
 
 from src.visualize import vis_utils as vis
 from src.io.psee_loader import PSEELoader
+
+##############################################
+
+def event2frame(events):
+    x = events['x']
+    y = events['y']
+    p = events['p']
+
+    #############
+
+    # (1)
+    # tot = np.zeros((240, 304))
+    # tot[y, x] += 1
+    
+    # (2)
+    tot = np.zeros((240, 304))
+    for (j, i, k) in zip(y, x, p):
+        tot[j, i] += 1
+    tot = np.reshape(tot, -1)
+
+    # (3)
+    # address, count = np.unique(y * 288 + x)
+
+    #############
+
+    frame = np.reshape(tot, -1)
+    frame = stats.rankdata(frame, "average")
+    frame = np.reshape(frame, (240, 304))
+
+    #############
+
+    # plt.hist(frame.flatten(), bins=100)
+    # plt.savefig('hist.png')
+    # assert (False)
+
+    #############
+
+    frame = frame - np.min(frame)
+    frame = frame / (np.max(frame) + 1e-6)
+    frame = 1. - frame
+
+    #############
+
+    frame = cv2.resize(frame, (288, 240)) # cv2 takes things as {W,H} even when array is sized {H,W}
+
+    #############
+
+    return frame
 
 ##############################################
 
@@ -78,7 +125,7 @@ def pick_box(w, h):
     i = np.prod(np.minimum(kmeans, wh), axis=1)
     u = np.prod(wh) + np.prod(kmeans, axis=1) - i
     iou = i / np.maximum(np.maximum(1e-10, i), u)
-
+    
     idx = np.argmax(iou)
     return idx, iou[idx], kmeans[idx]
 
@@ -131,60 +178,45 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
     for video_idx in range(len(td_files)):
         print (video_idx, counts, np.around(100 * ious / counts))
-
+    
         video = PSEELoader(td_files[video_idx])
         box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
-
-        frames = []
-        # frame_idx = 0
+        
+        events_list = []
         while not video.done:
 
             events = video.load_delta_t(delta_t)
             boxes = box_video.load_delta_t(delta_t)
+            events_list.append(events)
+            
+            if len(boxes) and len(events_list) >= 12:
+                events_list = events_list[-12:]
 
-            frame = vis.make_binary_histo(events, img=frame, width=304, height=240)
-
-            assert (np.shape(frame) == (240, 304, 3))
-            frame_preprocess = np.copy(frame[:, :, 0])
-
-            frame_preprocess = cv2.resize(frame_preprocess, (288, 240)) # cv2 takes things as {W,H} even when array is sized {H,W}
-            frames.append(frame_preprocess)
-
-            if len(boxes):
-                frames = frames[-12:]
+                frames = [event2frame(es) for es in events_list]
                 frames = np.stack(frames, axis=-1)
-                for flr, fud in [(0, 0), (0, 1), (1, 0), (1, 1)]:
-                    frames_cp = np.copy(frames)
 
-                    if flr: frames_cp = np.fliplr(frames_cp)
-                    if fud: frames_cp = np.flipud(frames_cp)
+                boxes_np = []
+                for box in boxes:
+                    # t, x, y, w, h
+                    box[1] = round(box[1] * (288 / 304))
+                    box[3] = round(box[3] * (288 / 304))
+                    box_np = np.array(list(box))
+                    boxes_np.append(box_np)
+                boxes_np = np.array(boxes_np)
 
-                    boxes_np = []
-                    for box in boxes:
-                        # t, x, y, w, h
-                        box[1] = round(box[1] * (288 / 304))
-                        box[3] = round(box[3] * (288 / 304))
-                        if flr: box[1] = 288 - box[1]
-                        if fud: box[2] = 240 - box[2]
-                        box_np = np.array(list(box))
-                        boxes_np.append(box_np)
-                    boxes_np = np.array(boxes_np)
+                ###################################
 
-                    ###################################
+                det_np = detection(boxes_np)
 
-                    det_np = detection(boxes_np)
+                ###################################
 
-                    ###################################
-
-                    if np.shape(frames_cp) == (240, 288, 12):
-                        img = np.mean(frames_cp, axis=-1)
-                        img = img - np.min(img)
-                        std = np.std(img)
-                        if std > 5:
-                            write_tfrecord(path, id, frames_cp, det_np)
-                            id += 1
-
-                frames = []
+                centered = np.mean(frames, axis=-1)
+                centered = centered - np.min(centered)
+                std = np.std(centered)
+                if std > 5:
+                    write_tfrecord(path, id, frames, det_np)
+                events_list = []
+                id += 1
 
 ###########################################################
 
@@ -238,10 +270,10 @@ for record in records:
 play_files_parallel('./val', records, skip=0, delta_t=20000)
 # '''
 ###########################################################
-
-
-
-
-
-
-
+    
+    
+    
+    
+    
+    
+    
