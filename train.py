@@ -47,42 +47,52 @@ from calc_map import calc_map
 ####################################
 
 if args.train:
-    weights = np.load('models/resnet_yolo_anchor.npy', allow_pickle=True).item()
+    # weights = None
+    weights = np.load('models/x.npy', allow_pickle=True).item()
+    # weights = np.load('models/resnet18.npy', allow_pickle=True).item()
+    # weights = np.load('models/resnet_yolo_anchor_1.npy', allow_pickle=True).item()
+    # weights = np.load('models/resnet_yolo_anchor_10x12.npy', allow_pickle=True).item()
+
     dropout = True
+    # dropout = False
 else:
-    weights = np.load('models/resnet_yolo_anchor_bn.npy', allow_pickle=True).item()
+    weights = np.load('models/x_bn.npy', allow_pickle=True).item()
     dropout = False
+
+####################################
+
+train_flag = True
 
 ####################################
 
 # 240, 288
 model = model(layers=[
-conv_block((7,7,12,64), 1, weights=weights), # 240, 288
+conv_block((7,7,12,64), 1, weights=weights, train=train_flag), # 240, 288
 
-max_pool(s=3, p=3),
+avg_pool(s=3, p=3),
 
-res_block1(64,   64, 1, weights=weights), # 80, 96
-res_block1(64,   64, 1, weights=weights), # 80, 96
+res_block1(64,   64, 1, weights=weights, train=train_flag), # 80, 96
+res_block1(64,   64, 1, weights=weights, train=train_flag), # 80, 96
 
-max_pool(s=2, p=2),
+avg_pool(s=2, p=2),
 
-res_block2(64,   128, 1, weights=weights), # 40, 48
-res_block1(128,  128, 1, weights=weights), # 40, 48
+res_block2(64,   128, 1, weights=weights, train=train_flag), # 40, 48
+res_block1(128,  128, 1, weights=weights, train=train_flag), # 40, 48
 
-max_pool(s=2, p=2),
+avg_pool(s=2, p=2),
 
-res_block2(128,  256, 1, weights=weights), # 20, 24
-res_block1(256,  256, 1, weights=weights), # 20, 24
+res_block2(128,  256, 1, weights=weights, train=train_flag), # 20, 24
+res_block1(256,  256, 1, weights=weights, train=train_flag), # 20, 24
 
-max_pool(s=2, p=2),
+avg_pool(s=2, p=2),
 
-res_block2(256,  512, 1, weights=weights), # 10, 12
-res_block1(512,  512, 1, weights=weights), # 10, 12
+res_block2(256,  512, 1, weights=weights, train=train_flag), # 10, 12
+res_block1(512,  512, 1, weights=weights, train=train_flag), # 10, 12
 
-max_pool(s=2, p=2),
+avg_pool(s=2, p=2),
 
-res_block2(512,  512, 1, weights=weights), # 5, 6
-res_block1(512,  512, 1, weights=weights), # 5, 6
+#res_block2(512,  512, 1, weights=weights), # 5, 6
+#res_block1(512,  512, 1, weights=weights), # 5, 6
 
 dense_block(5*6*512, 2048, weights=weights, dropout=dropout),
 dense_block(2048, 7*10*12*7, weights=weights, relu=False),
@@ -170,8 +180,8 @@ def collect_filenames(path):
 
 ####################################
 
-if args.train: filenames = collect_filenames('./dataset/train')
-else:          filenames = collect_filenames('./dataset/val')
+if args.train: filenames = collect_filenames('./dataset/train_old')
+else:          filenames = collect_filenames('./dataset/val_old')
 
 dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
@@ -198,9 +208,14 @@ if args.train:
         for (id, x, y) in dataset:
 
             out, loss, losses, grad = gradients(model, x, y)
+            (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
+            '''
+            print (yx_loss.numpy(), hw_loss.numpy(), obj_loss.numpy(), no_obj_loss.numpy(), cat_loss.numpy())
+            for (g, p) in zip(grad, params):
+                print ( np.shape(p.numpy()), np.mean(np.absolute(g.numpy())) )
+            '''
             optimizer.apply_gradients(zip(grad, params))
 
-            (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
             total_yx_loss     += yx_loss.numpy()
             total_hw_loss     += hw_loss.numpy()
             total_obj_loss    += obj_loss.numpy()

@@ -43,6 +43,9 @@ def softmax(x):
     e_x = np.exp(x - np.max(x, axis=-1, keepdims=True))
     return e_x / np.sum(e_x, axis=-1, keepdims=True)
 
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
 ####################################
 
 offset_np = np.array([
@@ -93,6 +96,8 @@ def calc_map(id, truth, pred):
     truth[..., 2] = truth[..., 2] * np.reshape(kmeans[:, 1], (1, 1, 7, 1, 1))
     truth[..., 3] = truth[..., 3] * np.reshape(kmeans[:, 0], (1, 1, 7, 1, 1))
     # [12800, 7, 5, 6, 7]
+    pred[..., 0] = sigmoid(pred[..., 0])
+    pred[..., 1] = sigmoid(pred[..., 1])
     pred[..., 2] = np.exp(pred[..., 2]) * np.reshape(kmeans[:, 1], (1, 7, 1, 1))
     pred[..., 3] = np.exp(pred[..., 3]) * np.reshape(kmeans[:, 0], (1, 7, 1, 1))
 

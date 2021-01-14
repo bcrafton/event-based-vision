@@ -1,0 +1,8 @@
+
+rm -rf train12 & 
+rm -rf train4  &
+rm -rf train1  &
+
+rm -rf val12 &
+rm -rf val4  &
+rm -rf val1  &

@@ -12,59 +12,11 @@ import numpy as np
 import tensorflow as tf
 import cv2
 import argparse
-from scipy import stats
+
 import matplotlib.pyplot as plt
 
 from src.visualize import vis_utils as vis
 from src.io.psee_loader import PSEELoader
-
-##############################################
-
-def event2frame(events):
-    x = events['x']
-    y = events['y']
-    p = events['p']
-
-    #############
-
-    # (1)
-    # tot = np.zeros((240, 304))
-    # tot[y, x] += 1
-    
-    # (2)
-    tot = np.zeros((240, 304))
-    for (j, i, k) in zip(y, x, p):
-        tot[j, i] += 1
-    tot = np.reshape(tot, -1)
-
-    # (3)
-    # address, count = np.unique(y * 288 + x)
-
-    #############
-
-    frame = np.reshape(tot, -1)
-    frame = stats.rankdata(frame, "average")
-    frame = np.reshape(frame, (240, 304))
-
-    #############
-
-    # plt.hist(frame.flatten(), bins=100)
-    # plt.savefig('hist.png')
-    # assert (False)
-
-    #############
-
-    frame = frame - np.min(frame)
-    frame = frame / (np.max(frame) + 1e-6)
-    frame = 1. - frame
-
-    #############
-
-    frame = cv2.resize(frame, (288, 240)) # cv2 takes things as {W,H} even when array is sized {H,W}
-
-    #############
-
-    return frame
 
 ##############################################
 
@@ -182,18 +134,25 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
         video = PSEELoader(td_files[video_idx])
         box_video = PSEELoader(td_files[video_idx].replace('_td.dat', '_bbox.npy'))
         
-        events_list = []
+        frames = []
+        # frame_idx = 0
         while not video.done:
 
             events = video.load_delta_t(delta_t)
             boxes = box_video.load_delta_t(delta_t)
-            events_list.append(events)
-            
-            if len(boxes) and len(events_list) >= 12:
-                events_list = events_list[-12:]
 
-                frames = [event2frame(es) for es in events_list]
+            frame = vis.make_binary_histo(events, img=frame, width=304, height=240)
+
+            assert (np.shape(frame) == (240, 304, 3))
+            frame_preprocess = np.copy(frame[:, :, 0])
+
+            frame_preprocess = cv2.resize(frame_preprocess, (288, 240)) # cv2 takes things as {W,H} even when array is sized {H,W}
+            frames.append(frame_preprocess)
+            
+            if len(boxes):
+                frames = frames[-12:]
                 frames = np.stack(frames, axis=-1)
+                frames_cp = np.copy(frames)
 
                 boxes_np = []
                 for box in boxes:
@@ -210,12 +169,16 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
 
                 ###################################
 
-                centered = np.mean(frames, axis=-1)
-                centered = centered - np.min(centered)
-                std = np.std(centered)
-                if (std * 255) > 5:
-                    write_tfrecord(path, id, frames, det_np)
-                events_list = []
+                if np.shape(frames_cp) == (240, 288, 12):
+                    img = np.mean(frames_cp, axis=-1)
+                    img = img - np.min(img)
+                    std = np.std(img)
+                    if std > 5:
+                        # filename = '%s/%d_%d.tfrecord' % (path, video_idx, frame_idx)
+                        write_tfrecord(path, id, frames_cp, det_np)
+
+                frames = []
+                # frame_idx += 1
                 id += 1
 
 ###########################################################
@@ -255,11 +218,11 @@ records = records + collect_filenames(val_path)
 for record in records:
     print (record)
 
-play_files_parallel('./train', records, skip=0, delta_t=20000)
+play_files_parallel('./train_old', records, skip=0, delta_t=20000)
 # '''
 ###########################################################
 # '''
-test_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/'
+test_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test'
 
 records = []
 records = records + collect_filenames(test_path)
@@ -267,7 +230,7 @@ records = records + collect_filenames(test_path)
 for record in records:
     print (record)
 
-play_files_parallel('./val', records, skip=0, delta_t=20000)
+play_files_parallel('./val_old', records, skip=0, delta_t=20000)
 # '''
 ###########################################################
     

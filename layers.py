@@ -108,7 +108,7 @@ class conv_block(layer):
         conv = tf.nn.conv2d(x_pad, self.f, [1,self.p,self.p,1], 'VALID')
         mean, var = tf.nn.moments(conv, axes=[0,1,2])
         bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)        
-        if self.relu: out = tf.nn.relu(bn)
+        if self.relu: out = tf.nn.leaky_relu(bn, 0.15)
         else:         out = bn
         return out 
 
@@ -122,7 +122,7 @@ class conv_block(layer):
         self.total += 1
 
         bn = tf.nn.batch_normalization(conv, mean, var, self.b, self.g, 1e-5)
-        if self.relu: out = tf.nn.relu(bn)
+        if self.relu: out = tf.nn.leaky_relu(bn, 0.15)
         else:         out = bn
         return out
 
@@ -133,7 +133,7 @@ class conv_block(layer):
         # mean, var = tf.nn.moments(conv, axes=[0,1,2])
         bn = tf.nn.batch_normalization(conv, self.mean, self.var, self.b, self.g, tf.constant(1e-5, dtype=tf.float32))
 
-        if self.relu: out = tf.nn.relu(bn)
+        if self.relu: out = tf.nn.leaky_relu(bn, 0.15)
         else:         out = bn
         return out
 
@@ -171,19 +171,19 @@ class res_block1(layer):
     def train(self, x):
         y1 = self.conv1.train(x)
         y2 = self.conv2.train(y1)
-        y3 = tf.nn.relu(x + y2)
+        y3 = tf.nn.leaky_relu(x + y2, 0.15)
         return y3
 
     def collect(self, x):
         y1 = self.conv1.collect(x)
         y2 = self.conv2.collect(y1)
-        y3 = tf.nn.relu(x + y2)
+        y3 = tf.nn.leaky_relu(x + y2, 0.15)
         return y3
 
     def predict(self, x):
         y1 = self.conv1.predict(x)
         y2 = self.conv2.predict(y1)
-        y3 = tf.nn.relu(x + y2)
+        y3 = tf.nn.leaky_relu(x + y2, 0.15)
         return y3
 
     def get_weights(self):
@@ -221,21 +221,21 @@ class res_block2(layer):
         y1 = self.conv1.train(x)
         y2 = self.conv2.train(y1)
         y3 = self.conv3.train(x)
-        y4 = tf.nn.relu(y2 + y3)
+        y4 = tf.nn.leaky_relu(y2 + y3, 0.15)
         return y4
 
     def collect(self, x):
         y1 = self.conv1.collect(x)
         y2 = self.conv2.collect(y1)
         y3 = self.conv3.collect(x)
-        y4 = tf.nn.relu(y2 + y3)
+        y4 = tf.nn.leaky_relu(y2 + y3, 0.15)
         return y4
 
     def predict(self, x):
         y1 = self.conv1.predict(x)
         y2 = self.conv2.predict(y1)
         y3 = self.conv3.predict(x)
-        y4 = tf.nn.relu(y2 + y3)
+        y4 = tf.nn.leaky_relu(y2 + y3, 0.15)
         return y4
 
     def get_weights(self):
@@ -284,7 +284,7 @@ class dense_block(layer):
         x = tf.reshape(x, (-1, self.isize))
         fc = tf.matmul(x, self.w) + self.b
 
-        if self.relu: out = tf.nn.relu(fc)
+        if self.relu: out = tf.nn.leaky_relu(fc, 0.15)
         else:         out = fc
 
         if self.dropout: out = tf.nn.dropout(out, 0.5)
@@ -295,7 +295,7 @@ class dense_block(layer):
         x = tf.reshape(x, (-1, self.isize))
         fc = tf.matmul(x, self.w) + self.b
 
-        if self.relu: out = tf.nn.relu(fc)
+        if self.relu: out = tf.nn.leaky_relu(fc, 0.15)
         else:         out = fc
 
         return out
@@ -304,7 +304,7 @@ class dense_block(layer):
         x = tf.reshape(x, (-1, self.isize))
         fc = tf.matmul(x, self.w) + self.b
 
-        if self.relu: out = tf.nn.relu(fc)
+        if self.relu: out = tf.nn.leaky_relu(fc, 0.15)
         else:         out = fc
 
         return out
