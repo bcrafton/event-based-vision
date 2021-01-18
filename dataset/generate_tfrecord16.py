@@ -189,8 +189,8 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
             boxes = box_video.load_delta_t(delta_t)
             events_list.append(events)
             
-            if len(boxes) and len(events_list) >= 12:
-                events_list = events_list[-12:]
+            if len(boxes) and len(events_list) >= 16:
+                events_list = events_list[-16:]
 
                 frames = [event2frame(es) for es in events_list]
                 frames = np.stack(frames, axis=-1)

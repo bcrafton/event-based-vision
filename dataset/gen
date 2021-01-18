@@ -1,2 +1,3 @@
 
-nohup python generate_tfrecord.py &
+# nohup python generate_tfrecord.py &
+nohup python generate_tfrecord16.py &
