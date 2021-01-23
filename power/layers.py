@@ -26,7 +26,6 @@ class model:
 #############
 
 class layer:
-    weight_id = 0
     layer_id = 0
     
     def __init__(self):
@@ -39,8 +38,6 @@ class layer:
         
 class conv_block(layer):
     def __init__(self, shape, p, relu=True):
-        self.weight_id = layer.weight_id
-        layer.weight_id += 1
         self.layer_id = layer.layer_id
         layer.layer_id += 1
 
@@ -53,11 +50,68 @@ class conv_block(layer):
         h,w,c = x
         h = conv_output_length(input_length=h+2*self.pad,filter_size=self.k, padding='valid', stride=self.p)
         w = conv_output_length(input_length=w+2*self.pad,filter_size=self.k, padding='valid', stride=self.p)
+        assert (c == self.f1)
         c = self.f2
         out = (h,w,c)
         macs = self.k * self.k * h * w * self.f1 * self.f2
         print("Layer ID : {} size : {} number of macs : {}".format(self.layer_id,out,macs))
         return macs,out 
+
+#############
+
+class conv_dw(layer):
+    def __init__(self, f, p):
+        self.layer_id = layer.layer_id
+        layer.layer_id += 1
+
+        self.f = f
+        self.p = p
+        self.pad = 1 # same padding for 3x3 filter
+
+    def forward(self, x):
+        h,w,c = x
+        h = conv_output_length(input_length=h, filter_size=3, padding='same', stride=self.p)
+        w = conv_output_length(input_length=w, filter_size=3, padding='same', stride=self.p)
+        assert (c == self.f)
+        out = (h,w,c)
+        macs = 3 * 3 * h * w * self.f
+        print("Layer ID : {} size : {} number of macs : {}".format(self.layer_id,out,macs))
+        return macs,out
+
+#############
+
+class conv_pw(layer):
+    def __init__(self, f1, f2):
+        self.layer_id = layer.layer_id
+        layer.layer_id += 1
+
+        self.f1 = f1
+        self.f2 = f2
+
+    def forward(self, x):
+        h,w,c = x
+        assert (c == self.f1)
+        c = self.f2
+        out = (h,w,c)
+        macs = 1 * 1 * h * w * self.f1 * self.f2
+        print("Layer ID : {} size : {} number of macs : {}".format(self.layer_id,out,macs))
+        return macs,out
+
+#############
+
+class mobile_block(layer):
+    def __init__(self, f1, f2, p):
+        self.dw = conv_dw(f1, p)
+        self.pw = conv_pw(f1, f2)
+
+        self.layer_id = layer.layer_id
+        layer.layer_id += 1
+
+    def forward(self, x):
+        mac1,y1 = self.dw.forward(x)
+        mac2,y2 = self.pw.forward(y1)
+        macs= mac1 + mac2
+        return macs,y2
 
 #############
 
@@ -108,8 +162,6 @@ class res_block2(layer):
 class dense_block(layer):
     def __init__(self, isize, osize, relu=True, dropout=False):
         self.total_macs = 0
-        self.weight_id = layer.weight_id
-        layer.weight_id += 1
         self.layer_id = layer.layer_id
         layer.layer_id += 1
         
