@@ -4,10 +4,11 @@ cache size  : 16384
 Average number of evictions : 4.932839083072511
 hits: 295821
 misses: 57191
-Energy due to SRAM accesses : 295821 femtojoules
-Energy due to DRAM accesses : 686292 femtojoules
-Total energy utilization of frame aggregator: 982113 femtojoules
+Energy due to SRAM accesses : 1.5382692e-07 joules
+Energy due to DRAM accesses : 0.00011444147864 joules
+Total energy utilization of frame aggregator: 0.00011459530556 joules
 
+Energy assuming there was no aggregator : 0.0007060240000000001 joules
 ################################################
 
 Event data  : ./data/551.npy
@@ -16,10 +17,11 @@ cache size  : 16384
 Average number of evictions : 5.314291679716045
 hits: 278131
 misses: 47895
-Energy due to SRAM accesses : 278131 femtojoules
-Energy due to DRAM accesses : 574740 femtojoules
-Total energy utilization of frame aggregator: 852871 femtojoules
+Energy due to SRAM accesses : 1.4462812e-07 joules
+Energy due to DRAM accesses : 9.58398108e-05 joules
+Total energy utilization of frame aggregator: 9.598443892e-05 joules
 
+Energy assuming there was no aggregator : 0.0006520520000000001 joules
 ################################################
 
 Event data  : ./data/552.npy
@@ -28,10 +30,11 @@ cache size  : 16384
 Average number of evictions : 5.368892410382002
 hits: 248900
 misses: 41649
-Energy due to SRAM accesses : 248900 femtojoules
-Energy due to DRAM accesses : 499788 femtojoules
-Total energy utilization of frame aggregator: 748688 femtojoules
+Energy due to SRAM accesses : 1.29428e-07 joules
+Energy due to DRAM accesses : 8.334131496e-05 joules
+Total energy utilization of frame aggregator: 8.347074296e-05 joules
 
+Energy assuming there was no aggregator : 0.000581098 joules
 ################################################
 
 Event data  : ./data/553.npy
@@ -40,10 +43,11 @@ cache size  : 16384
 Average number of evictions : 5.5980492941854925
 hits: 259144
 misses: 39883
-Energy due to SRAM accesses : 259144 femtojoules
-Energy due to DRAM accesses : 478596 femtojoules
-Total energy utilization of frame aggregator: 737740 femtojoules
+Energy due to SRAM accesses : 1.3475488e-07 joules
+Energy due to DRAM accesses : 7.980747832e-05 joules
+Total energy utilization of frame aggregator: 7.99422332e-05 joules
 
+Energy assuming there was no aggregator : 0.000598054 joules
 ################################################
 
 Event data  : ./data/554.npy
@@ -52,10 +56,11 @@ cache size  : 16384
 Average number of evictions : 5.719082782743879
 hits: 260019
 misses: 38595
-Energy due to SRAM accesses : 260019 femtojoules
-Energy due to DRAM accesses : 463140 femtojoules
-Total energy utilization of frame aggregator: 723159 femtojoules
+Energy due to SRAM accesses : 1.3520988e-07 joules
+Energy due to DRAM accesses : 7.72301388e-05 joules
+Total energy utilization of frame aggregator: 7.736534868e-05 joules
 
+Energy assuming there was no aggregator : 0.000597228 joules
 ################################################
 
 Event data  : ./data/550.npy
@@ -64,10 +69,11 @@ cache size  : 16384
 Average number of evictions : 4.657492615314701
 hits: 198578
 misses: 35208
-Energy due to SRAM accesses : 198578 femtojoules
-Energy due to DRAM accesses : 422496 femtojoules
-Total energy utilization of frame aggregator: 621074 femtojoules
+Energy due to SRAM accesses : 1.0326056e-07 joules
+Energy due to DRAM accesses : 7.045261632e-05 joules
+Total energy utilization of frame aggregator: 7.055587688e-05 joules
 
+Energy assuming there was no aggregator : 0.00046757200000000003 joules
 ################################################
 
 Event data  : ./data/551.npy
@@ -76,10 +82,11 @@ cache size  : 16384
 Average number of evictions : 5.2860862019091694
 hits: 189651
 misses: 27656
-Energy due to SRAM accesses : 189651 femtojoules
-Energy due to DRAM accesses : 331872 femtojoules
-Total energy utilization of frame aggregator: 521523 femtojoules
+Energy due to SRAM accesses : 9.861852e-08 joules
+Energy due to DRAM accesses : 5.5340762239999996e-05 joules
+Total energy utilization of frame aggregator: 5.5439380759999995e-05 joules
 
+Energy assuming there was no aggregator : 0.00043461400000000005 joules
 ################################################
 
 Event data  : ./data/552.npy
@@ -88,10 +95,11 @@ cache size  : 16384
 Average number of evictions : 5.479128614068695
 hits: 167443
 misses: 22447
-Energy due to SRAM accesses : 167443 femtojoules
-Energy due to DRAM accesses : 269364 femtojoules
-Total energy utilization of frame aggregator: 436807 femtojoules
+Energy due to SRAM accesses : 8.707036000000001e-08 joules
+Energy due to DRAM accesses : 4.4917344879999996e-05 joules
+Total energy utilization of frame aggregator: 4.5004415239999996e-05 joules
 
+Energy assuming there was no aggregator : 0.00037978 joules
 ################################################
 
 Event data  : ./data/553.npy
@@ -100,10 +108,11 @@ cache size  : 16384
 Average number of evictions : 5.553033373868396
 hits: 176265
 misses: 22203
-Energy due to SRAM accesses : 176265 femtojoules
-Energy due to DRAM accesses : 266436 femtojoules
-Total energy utilization of frame aggregator: 442701 femtojoules
+Energy due to SRAM accesses : 9.16578e-08 joules
+Energy due to DRAM accesses : 4.442909112e-05 joules
+Total energy utilization of frame aggregator: 4.452074892e-05 joules
 
+Energy assuming there was no aggregator : 0.000396936 joules
 ################################################
 
 Event data  : ./data/554.npy
@@ -112,10 +121,11 @@ cache size  : 16384
 Average number of evictions : 5.749363027271869
 hits: 174687
 misses: 21194
-Energy due to SRAM accesses : 174687 femtojoules
-Energy due to DRAM accesses : 254328 femtojoules
-Total energy utilization of frame aggregator: 429015 femtojoules
+Energy due to SRAM accesses : 9.083724e-08 joules
+Energy due to DRAM accesses : 4.241004176e-05 joules
+Total energy utilization of frame aggregator: 4.2500879e-05 joules
 
+Energy assuming there was no aggregator : 0.00039176200000000003 joules
 ################################################
 
 Event data  : ./data/550.npy
@@ -124,10 +134,11 @@ cache size  : 16384
 Average number of evictions : 4.657095747100295
 hits: 122942
 misses: 17588
-Energy due to SRAM accesses : 122942 femtojoules
-Energy due to DRAM accesses : 211056 femtojoules
-Total energy utilization of frame aggregator: 333998 femtojoules
+Energy due to SRAM accesses : 6.392984e-08 joules
+Energy due to DRAM accesses : 3.5194291519999996e-05 joules
+Total energy utilization of frame aggregator: 3.525822136e-05 joules
 
+Energy assuming there was no aggregator : 0.00028106 joules
 ################################################
 
 Event data  : ./data/551.npy
@@ -136,10 +147,11 @@ cache size  : 16384
 Average number of evictions : 5.300656940534084
 hits: 119369
 misses: 11721
-Energy due to SRAM accesses : 119369 femtojoules
-Energy due to DRAM accesses : 140652 femtojoules
-Total energy utilization of frame aggregator: 260021 femtojoules
+Energy due to SRAM accesses : 6.207188e-08 joules
+Energy due to DRAM accesses : 2.345418984e-05 joules
+Total energy utilization of frame aggregator: 2.3516261719999998e-05 joules
 
+Energy assuming there was no aggregator : 0.00026218000000000004 joules
 ################################################
 
 Event data  : ./data/552.npy
@@ -148,10 +160,11 @@ cache size  : 16384
 Average number of evictions : 5.999747634069401
 hits: 106539
 misses: 7925
-Energy due to SRAM accesses : 106539 femtojoules
-Energy due to DRAM accesses : 95100 femtojoules
-Total energy utilization of frame aggregator: 201639 femtojoules
+Energy due to SRAM accesses : 5.540028e-08 joules
+Energy due to DRAM accesses : 1.5858241999999998e-05 joules
+Total energy utilization of frame aggregator: 1.591364228e-05 joules
 
+Energy assuming there was no aggregator : 0.00022892800000000001 joules
 ################################################
 
 Event data  : ./data/553.npy
@@ -160,10 +173,11 @@ cache size  : 16384
 Average number of evictions : 5.41684511063526
 hits: 109166
 misses: 8406
-Energy due to SRAM accesses : 109166 femtojoules
-Energy due to DRAM accesses : 100872 femtojoules
-Total energy utilization of frame aggregator: 210038 femtojoules
+Energy due to SRAM accesses : 5.676632e-08 joules
+Energy due to DRAM accesses : 1.682074224e-05 joules
+Total energy utilization of frame aggregator: 1.687750856e-05 joules
 
+Energy assuming there was no aggregator : 0.000235144 joules
 ################################################
 
 Event data  : ./data/554.npy
@@ -172,10 +186,11 @@ cache size  : 16384
 Average number of evictions : 6.0727172565762295
 hits: 108600
 misses: 7261
-Energy due to SRAM accesses : 108600 femtojoules
-Energy due to DRAM accesses : 87132 femtojoules
-Total energy utilization of frame aggregator: 195732 femtojoules
+Energy due to SRAM accesses : 5.6472e-08 joules
+Energy due to DRAM accesses : 1.4529551439999999e-05 joules
+Total energy utilization of frame aggregator: 1.458602344e-05 joules
 
+Energy assuming there was no aggregator : 0.00023172200000000002 joules
 ################################################
 
 Event data  : ./data/550.npy
@@ -184,10 +199,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 50098
 misses: 0
-Energy due to SRAM accesses : 50098 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 50098 femtojoules
+Energy due to SRAM accesses : 2.605096e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 2.605096e-08 joules
 
+Energy assuming there was no aggregator : 0.000100196 joules
 ################################################
 
 Event data  : ./data/551.npy
@@ -196,10 +212,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 45641
 misses: 0
-Energy due to SRAM accesses : 45641 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 45641 femtojoules
+Energy due to SRAM accesses : 2.373332e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 2.373332e-08 joules
 
+Energy assuming there was no aggregator : 9.128200000000001e-05 joules
 ################################################
 
 Event data  : ./data/552.npy
@@ -208,10 +225,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 45118
 misses: 0
-Energy due to SRAM accesses : 45118 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 45118 femtojoules
+Energy due to SRAM accesses : 2.346136e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 2.346136e-08 joules
 
+Energy assuming there was no aggregator : 9.023600000000001e-05 joules
 ################################################
 
 Event data  : ./data/553.npy
@@ -220,10 +238,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 42326
 misses: 0
-Energy due to SRAM accesses : 42326 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 42326 femtojoules
+Energy due to SRAM accesses : 2.200952e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 2.200952e-08 joules
 
+Energy assuming there was no aggregator : 8.4652e-05 joules
 ################################################
 
 Event data  : ./data/554.npy
@@ -232,10 +251,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 43374
 misses: 0
-Energy due to SRAM accesses : 43374 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 43374 femtojoules
+Energy due to SRAM accesses : 2.255448e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 2.255448e-08 joules
 
+Energy assuming there was no aggregator : 8.6748e-05 joules
 ################################################
 
 Event data  : ./data/550.npy
@@ -244,10 +264,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 24766
 misses: 0
-Energy due to SRAM accesses : 24766 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 24766 femtojoules
+Energy due to SRAM accesses : 1.287832e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 1.287832e-08 joules
 
+Energy assuming there was no aggregator : 4.9532000000000006e-05 joules
 ################################################
 
 Event data  : ./data/551.npy
@@ -256,10 +277,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 21882
 misses: 0
-Energy due to SRAM accesses : 21882 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 21882 femtojoules
+Energy due to SRAM accesses : 1.137864e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 1.137864e-08 joules
 
+Energy assuming there was no aggregator : 4.3764e-05 joules
 ################################################
 
 Event data  : ./data/552.npy
@@ -268,10 +290,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 22892
 misses: 0
-Energy due to SRAM accesses : 22892 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 22892 femtojoules
+Energy due to SRAM accesses : 1.190384e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 1.190384e-08 joules
 
+Energy assuming there was no aggregator : 4.5784e-05 joules
 ################################################
 
 Event data  : ./data/553.npy
@@ -280,10 +303,11 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 20599
 misses: 0
-Energy due to SRAM accesses : 20599 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 20599 femtojoules
+Energy due to SRAM accesses : 1.071148e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 1.071148e-08 joules
 
+Energy assuming there was no aggregator : 4.1198e-05 joules
 ################################################
 
 Event data  : ./data/554.npy
@@ -292,9 +316,10 @@ cache size  : 16384
 Average number of evictions : nan
 hits: 21600
 misses: 0
-Energy due to SRAM accesses : 21600 femtojoules
-Energy due to DRAM accesses : 0 femtojoules
-Total energy utilization of frame aggregator: 21600 femtojoules
+Energy due to SRAM accesses : 1.1232000000000001e-08 joules
+Energy due to DRAM accesses : 0.0 joules
+Total energy utilization of frame aggregator: 1.1232000000000001e-08 joules
 
+Energy assuming there was no aggregator : 4.32e-05 joules
 ################################################
 

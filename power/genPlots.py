@@ -10,10 +10,16 @@ time_per_frame = 33.33e-3 #for thirty frames per second
 events_list = ['./agg/data/550.npy','./agg/data/551.npy','./agg/data/552.npy','./agg/data/553.npy','./agg/data/554.npy']
 agg_power = np.zeros(N)
 cnn_power = np.zeros(N)
-camera_power = 0.02 #(90.17e-3)/(5.80e-3) #from paper seems very large compared to toher numbers
-model = getModel()
+temporal_list = [12,9,6,3,1]
+camera_power = 50e-3 #(90.17e-3)/(5.80e-3) #from paper seems very large compared to toher numbers
+
 ####################################
-cnn_dict = get_cnn_enrgy(model,input_size=(240,288,12))
+for i,t in enumerate(temporal_list) :
+	model = getModel(t)	
+	cnn_dict = get_cnn_enrgy(model,input_size=(240,288,t))
+	cnn_enrgy = cnn_dict['energy']
+	print(cnn_enrgy)
+	cnn_power[i] = cnn_enrgy#/time_per_frame
 
 for i in range(0,N):
 	hits,misses = loadData(event_seq=events_list[i])
@@ -22,10 +28,10 @@ for i in range(0,N):
 	# print('\n\n')
 	
 	agg_enrgy = agg_dict['total']
-	cnn_enrgy = cnn_dict['energy']
 	
 	agg_power[i] = agg_enrgy/time_per_frame
-	cnn_power[i] = (cnn_enrgy/time_per_frame)/25
+	# cnn_power[i] = (cnn_enrgy/time_per_frame)/25
+agg_power = np.mean(agg_power)
 print(agg_power)
 print(cnn_power)
 
@@ -53,9 +59,9 @@ p3 = plt.bar(ind, agg_power, width,
              bottom=cnn_power)
 
 plt.ylabel('joules/frame')
-plt.xlabel('Data Sequences')
+plt.xlabel('Temporal frame stacking')
 plt.title('Power analysis of event based vision system')
-plt.xticks(ind, ('550', '551', '552', '553', '554'))
+plt.xticks(ind, ('12', '9', '6', '3', '1'))
 # plt.yticks(np.arange(0, 81, 10))
 plt.legend((p1[0], p2[0],p3[0]), ('CNN','CAMERA', 'AGG'))
 
