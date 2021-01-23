@@ -35,11 +35,10 @@ class layer:
     def forward(self, x):        
         assert(False)
         
-        
 #############
         
 class conv_block(layer):
-    def __init__(self, shape, p, weights=None, train=True, relu=True):
+    def __init__(self, shape, p, relu=True):
         self.weight_id = layer.weight_id
         layer.weight_id += 1
         self.layer_id = layer.layer_id
@@ -49,18 +48,6 @@ class conv_block(layer):
         self.p = p
         self.pad = self.k // 2
         self.relu = tf.constant(relu)
-        self.train_flag = tf.constant(train)
-
-        if weights:
-            f, b, g = weights[self.weight_id]['f'], weights[self.weight_id]['b'], weights[self.weight_id]['g']
-            self.f = tf.Variable(f, dtype=tf.float32)
-            self.g = tf.Variable(g, dtype=tf.float32)
-            self.b = tf.Variable(b, dtype=tf.float32)
-        else:
-            f_np = init_filters(size=[self.k, self.k, self.f1, self.f2], init='glorot_uniform')
-            self.f = tf.Variable(f_np, dtype=tf.float32)
-            self.g = tf.Variable(np.ones(shape=self.f2), dtype=tf.float32)
-            self.b = tf.Variable(np.zeros(shape=self.f2), dtype=tf.float32)
 
     def forward(self, x):
         h,w,c = x
@@ -75,14 +62,14 @@ class conv_block(layer):
 #############
 
 class res_block1(layer):
-    def __init__(self, f1, f2, p, weights=None, train=True):
+    def __init__(self, f1, f2, p):
         
         self.f1 = f1
         self.f2 = f2
         self.p = p
 
-        self.conv1 = conv_block((3, 3, f1, f2), p, weights=weights, train=train)
-        self.conv2 = conv_block((3, 3, f2, f2), 1, weights=weights, train=train, relu=False)
+        self.conv1 = conv_block((3, 3, f1, f2), p)
+        self.conv2 = conv_block((3, 3, f2, f2), 1, relu=False)
 
         self.layer_id = layer.layer_id
         layer.layer_id += 1
@@ -95,15 +82,15 @@ class res_block1(layer):
 #############
 
 class res_block2(layer):
-    def __init__(self, f1, f2, p, weights=None, train=True):
+    def __init__(self, f1, f2, p):
         self.total_macs = 0
         self.f1 = f1
         self.f2 = f2
         self.p = p
         
-        self.conv1 = conv_block((3, 3, f1, f2), p, weights=weights, train=train)
-        self.conv2 = conv_block((3, 3, f2, f2), 1, weights=weights, train=train, relu=False)
-        self.conv3 = conv_block((1, 1, f1, f2), p, weights=weights, train=train, relu=False)
+        self.conv1 = conv_block((3, 3, f1, f2), p)
+        self.conv2 = conv_block((3, 3, f2, f2), 1, relu=False)
+        self.conv3 = conv_block((1, 1, f1, f2), p, relu=False)
         
         self.layer_id = layer.layer_id
         layer.layer_id += 1
@@ -119,7 +106,7 @@ class res_block2(layer):
 #############
 
 class dense_block(layer):
-    def __init__(self, isize, osize, weights=None, train=True, relu=True, dropout=False):
+    def __init__(self, isize, osize, relu=True, dropout=False):
         self.total_macs = 0
         self.weight_id = layer.weight_id
         layer.weight_id += 1
@@ -130,16 +117,6 @@ class dense_block(layer):
         self.osize = osize
         self.relu = tf.constant(relu)
         self.dropout = tf.constant(dropout)
-        self.train_flag = tf.constant(train)
-
-        if weights:
-            w, b = weights[self.weight_id]['w'], weights[self.weight_id]['b']
-            self.w = tf.Variable(w, dtype=tf.float32)
-            self.b = tf.Variable(b, dtype=tf.float32)
-        else:
-            w_np = init_matrix(size=[isize, osize], init='glorot_uniform')
-            self.w = tf.Variable(w_np, dtype=tf.float32)
-            self.b = tf.Variable(np.zeros(shape=self.osize), dtype=tf.float32)
 
     def forward(self, x):
         assert(np.prod(x)== self.isize)
