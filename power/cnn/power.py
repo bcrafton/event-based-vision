@@ -95,7 +95,7 @@ def getModel(temp_stack=12):
 # 240, 288
 def getModel(temp_stack=12):
 	y = model(layers=[
-	conv_block((3,3,temp_stack,32), 1), # 240, 288
+	conv_block((7,7,temp_stack,32), 1), # 240, 288
 
 	max_pool(s=3, p=3),
 

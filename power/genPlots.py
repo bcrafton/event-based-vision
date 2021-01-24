@@ -37,6 +37,9 @@ print(cnn_power)
 
 ####################################
 
+dram_power = 65e-3 #from ramulator which uses dram power
+####################################
+
 ind = np.arange(N)
 width = 0.35       # the width of the bars: can also be len(x) sequence
 sns.set()
@@ -48,7 +51,7 @@ def set_sizes(fig_size=(9, 6), font_size=10):
     plt.rcParams["axes.labelsize"] = font_size
     plt.rcParams["axes.titlesize"] = font_size+5
     plt.rcParams["legend.fontsize"] = font_size+3
-set_sizes((12,8), 15)
+set_sizes((12,8), 12)
 
 ####################################
 
@@ -57,13 +60,16 @@ p2 = plt.bar(ind, camera_power, width,
              bottom=cnn_power)
 p3 = plt.bar(ind, agg_power, width,
              bottom=cnn_power)
+p4 = plt.bar(ind, dram_power, width,
+             bottom=cnn_power)
+
 
 plt.ylabel('joules/frame')
 plt.xlabel('Temporal frame stacking')
 plt.title('Power analysis of event based vision system')
 plt.xticks(ind, ('12', '9', '6', '3', '1'))
 # plt.yticks(np.arange(0, 81, 10))
-plt.legend((p1[0], p2[0],p3[0]), ('CNN','CAMERA', 'AGG'))
+plt.legend((p1[0], p2[0],p3[0],p4[0]), ('CNN','CAMERA', 'AGG','DRAM'))
 
 plt.show()
 
