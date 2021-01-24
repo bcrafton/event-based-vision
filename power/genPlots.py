@@ -1,3 +1,4 @@
+
 import matplotlib.pyplot as plt
 from agg.test import getEnrgy, loadData
 from cnn.power import get_cnn_enrgy, getModel
@@ -5,12 +6,13 @@ import seaborn as sns
 import numpy as np
 
 ####################################
-N = 5
+
+temporal_list = [12,8,4,1]
+N = len(temporal_list)
 time_per_frame = 33.33e-3 #for thirty frames per second
 events_list = ['./agg/data/550.npy','./agg/data/551.npy','./agg/data/552.npy','./agg/data/553.npy','./agg/data/554.npy']
 agg_power = np.zeros(N)
 cnn_power = np.zeros(N)
-temporal_list = [12,9,6,3,1]
 camera_power = 50e-3 #(90.17e-3)/(5.80e-3) #from paper seems very large compared to toher numbers
 
 ####################################
@@ -24,53 +26,56 @@ for i,t in enumerate(temporal_list) :
 for i in range(0,N):
 	hits,misses = loadData(event_seq=events_list[i])
 	agg_dict = getEnrgy(hits,misses)
-	
-	# print('\n\n')
-	
-	agg_enrgy = agg_dict['total']
-	
+	agg_enrgy = agg_dict['total']	
 	agg_power[i] = agg_enrgy/time_per_frame
-	# cnn_power[i] = (cnn_enrgy/time_per_frame)/25
+
 agg_power = np.mean(agg_power)
+
 print(agg_power)
 print(cnn_power)
 
 ####################################
 
-dram_power = 65e-3 #from ramulator which uses dram power
+dram_power = 65e-3 # from ramulator which uses dram power
+
 ####################################
 
 ind = np.arange(N)
-width = 0.35       # the width of the bars: can also be len(x) sequence
-sns.set()
-def set_sizes(fig_size=(9, 6), font_size=10):
-    plt.rcParams["figure.figsize"] = fig_size
-    plt.rcParams["font.size"] = font_size
-    plt.rcParams["xtick.labelsize"] = font_size
-    plt.rcParams["ytick.labelsize"] = font_size
-    plt.rcParams["axes.labelsize"] = font_size
-    plt.rcParams["axes.titlesize"] = font_size+5
-    plt.rcParams["legend.fontsize"] = font_size+3
-set_sizes((12,8), 12)
+width = 0.35
 
 ####################################
 
 p1 = plt.bar(ind, cnn_power, width)
-p2 = plt.bar(ind, camera_power, width,
-             bottom=cnn_power)
-p3 = plt.bar(ind, agg_power, width,
-             bottom=cnn_power+camera_power)
-p4 = plt.bar(ind, dram_power, width,
-             bottom=cnn_power+camera_power+agg_power)
+p2 = plt.bar(ind, camera_power, width, bottom=cnn_power)
+p3 = plt.bar(ind, agg_power, width, bottom=cnn_power+camera_power)
+p4 = plt.bar(ind, dram_power, width, bottom=cnn_power+camera_power+agg_power)
 
+# plt.show()
 
-plt.ylabel('joules/frame')
-plt.xlabel('Temporal frame stacking')
-plt.title('Power analysis of event based vision system')
-plt.xticks(ind, ('12', '9', '6', '3', '1'))
-# plt.yticks(np.arange(0, 81, 10))
-plt.legend((p1[0], p2[0],p3[0],p4[0]), ('CNN','CAMERA', 'AGG','DRAM'))
+yticks = [0.00, 0.05, 0.10, 0.15, 0.20, 0.25, 0.30]
+plt.yticks(yticks, len(yticks) * [''])
+plt.ylim(bottom=0., top=0.30)
+plt.grid(True, axis='y', linestyle=(0, (5, 8)), color='black')
 
-plt.show()
+xticks = [0, 1, 2, 3]
+plt.xticks(xticks, len(xticks) * [''])
+
+plt.gcf().set_size_inches(4., 2.75)
+plt.tight_layout(0.)
+plt.gcf().savefig('power.png', dpi=500)
 
 ####################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
