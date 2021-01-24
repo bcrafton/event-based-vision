@@ -45,10 +45,10 @@ width = 0.35
 
 ####################################
 
-p1 = plt.bar(ind, cnn_power, width)
-p2 = plt.bar(ind, camera_power, width, bottom=cnn_power)
-p3 = plt.bar(ind, agg_power, width, bottom=cnn_power+camera_power)
-p4 = plt.bar(ind, dram_power, width, bottom=cnn_power+camera_power+agg_power)
+p1 = plt.bar(ind, cnn_power, width,color='k')
+p2 = plt.bar(ind, camera_power, width, bottom=cnn_power,color='#252850')
+p3 = plt.bar(ind, agg_power, width, bottom=cnn_power+camera_power,color='#f07878')
+p4 = plt.bar(ind, dram_power, width, bottom=cnn_power+camera_power+agg_power,color='#d0d2d1')
 
 # plt.show()
 
