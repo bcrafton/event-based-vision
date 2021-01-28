@@ -72,7 +72,7 @@ plt.yticks(yticks, len(yticks) * [''])
 plt.ylim(bottom=0., top=0.6)
 plt.grid(True, axis='y', linestyle=(0, (5, 8)), color='k')#(0, (1, 10))
 
-xticks = [0, 1, 2, 3]
+xticks = [0, 1, 2, 3,4]
 plt.xticks(xticks, len(xticks) * [''])
 
 plt.gcf().set_size_inches(4., 2.75)
