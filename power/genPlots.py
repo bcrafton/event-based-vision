@@ -59,20 +59,49 @@ width = 0.35
 
 ####################################
 
-p1 = plt.bar(ind, cnn_power, width,color='k')
-p2 = plt.bar(ind, cam_list, width, bottom=cnn_power,color='#252850')
-p3 = plt.bar(ind, agg_list, width, bottom=cnn_power+cam_list,color='#f07878')
-p4 = plt.bar(ind, dram_power, width, bottom=cnn_power+cam_list+agg_list,color='#d0d2d1')
-p5 = plt.bar(ind, isp_power, width, bottom=cnn_power+cam_list+agg_list+dram_power,color='#AA99FF')
+'''
+p1 = plt.bar(ind, cam_list,   width,                                                color='#f07878')
+p2 = plt.bar(ind, cnn_power,  width, bottom=cam_list,                               color='#888888')
+p3 = plt.bar(ind, dram_power, width, bottom=cnn_power+cam_list,                     color='#DDDDDD')
+p4 = plt.bar(ind, agg_list,   width, bottom=cnn_power+cam_list+dram_power,          color='black')
+p5 = plt.bar(ind, isp_power,  width, bottom=cnn_power+cam_list+agg_list+dram_power, color='#AA99FF')
+'''
 
-# plt.show()
+####################################
+'''
+p1 = plt.bar(ind, cam_list,   width,                                                color='#f07878')
+p2 = plt.bar(ind, agg_list,   width, bottom=cam_list,                               color='black')
+p3 = plt.bar(ind, isp_power,  width, bottom=cam_list+agg_list,                      color='black')
+
+p4 = plt.bar(ind, cnn_power,  width, bottom=cam_list+agg_list+isp_power,            color='#888888')
+p5 = plt.bar(ind, dram_power, width, bottom=cam_list+agg_list+isp_power+cnn_power,  color='#DDDDDD')
+'''
+####################################
+# '''
+p1 = plt.bar(ind, cam_list,   width,                                                color='#f07878')
+p2 = plt.bar(ind, agg_list,   width, bottom=cam_list,                               color='#4169e1')
+p3 = plt.bar(ind, isp_power,  width, bottom=cam_list+agg_list,                      color='#4169e1')
+
+p4 = plt.bar(ind, cnn_power,  width, bottom=cam_list+agg_list+isp_power,            color='#888888')
+p5 = plt.bar(ind, dram_power, width, bottom=cam_list+agg_list+isp_power+cnn_power,  color='#DDDDDD')
+# '''
+####################################
+'''
+p1 = plt.bar(ind, cam_list,   width,                                                color='#f07878')
+p2 = plt.bar(ind, agg_list,   width, bottom=cam_list,                               color='#4b96ff')
+p3 = plt.bar(ind, isp_power,  width, bottom=cam_list+agg_list,                      color='#4b96ff')
+
+p4 = plt.bar(ind, cnn_power,  width, bottom=cam_list+agg_list+isp_power,            color='#888888')
+p5 = plt.bar(ind, dram_power, width, bottom=cam_list+agg_list+isp_power+cnn_power,  color='#DDDDDD')
+'''
+####################################
 
 yticks = [0.00, 0.10, 0.20, 0.30,0.40,0.50,0.60]
 plt.yticks(yticks, len(yticks) * [''])
-plt.ylim(bottom=0., top=0.6)
+plt.ylim(bottom=0., top=0.625)
 plt.grid(True, axis='y', linestyle=(0, (5, 8)), color='k')#(0, (1, 10))
 
-xticks = [0, 1, 2, 3,4]
+xticks = [0, 1, 2, 3, 4]
 plt.xticks(xticks, len(xticks) * [''])
 
 plt.gcf().set_size_inches(4., 2.75)
