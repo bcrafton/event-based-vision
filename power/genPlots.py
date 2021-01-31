@@ -55,7 +55,7 @@ agg_list[0] = 0
 ####################################
 
 ind = np.arange(N+1)
-width = 0.35
+width = 0.5
 
 ####################################
 
@@ -113,6 +113,7 @@ plt.gcf().savefig('power.png', dpi=500)
 #calculate percentages
 total = np.zeros(N+1)
 delta = np.zeros(N+1)
+frac = np.zeros(N+1)
 cnn_percentages = np.zeros(N+1)
 cam_percentages = np.zeros(N+1)
 agg_percentages = np.zeros(N+1)
@@ -128,8 +129,10 @@ for i in range(len(cnn_power)):
 	isp_percentages[i] = isp_power[i]/total[i]
 
 for i in range(len(total)):
-	delta[i] =(total[0] - total[i])/total[0]
+	delta[i] = (total[0] - total[i]) / total[0]
 
+for i in range(len(total)):
+	frac[i] = total[i] / total[0]
 
 print("\n")
 print("Percentages for cnn: {}".format(cnn_percentages))
@@ -138,7 +141,7 @@ print("Percentages for agg: {}".format(agg_percentages))
 print("Percentages for dram: {}".format(dram_percentages))
 print("Percentages for isp: {}".format(isp_percentages))
 print("Deltas percentage for all configurations with relation to an optical camera: {}".format(delta))
-
+print("{}".format(frac))
 
 
 
