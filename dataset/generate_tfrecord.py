@@ -244,7 +244,7 @@ def collect_filenames(path):
     return filenames
 
 ###########################################################
-'''
+
 train_path = './src_data/'
 
 records = []
@@ -254,9 +254,9 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-'''
+
 ###########################################################
-# '''
+'''
 train_path  = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 val_path    = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
 
@@ -268,9 +268,9 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-# '''
+'''
 ###########################################################
-# '''
+'''
 test_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/'
 
 records = []
@@ -280,7 +280,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-# '''
+'''
 ###########################################################
     
     

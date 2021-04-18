@@ -56,7 +56,7 @@ if args.train:
     dropout = True
     # dropout = False
 else:
-    weights = np.load('models/x_bn.npy', allow_pickle=True).item()
+    weights = np.load('12_weights.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -180,8 +180,8 @@ def collect_filenames(path):
 
 ####################################
 
-if args.train: filenames = collect_filenames('./dataset/train_old')
-else:          filenames = collect_filenames('./dataset/val_old')
+if args.train: filenames = collect_filenames('./dataset/train')
+else:          filenames = collect_filenames('./dataset/train')
 
 dataset = tf.data.TFRecordDataset(filenames)
 dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
@@ -274,28 +274,30 @@ if not args.train:
     for (id, x, y) in dataset:
 
         out = predict(model, x)
+        true, pred = y.numpy(), out.numpy()
+        ids.append(np.array(id))
+        ys.append(np.copy(true))
+        preds.append(np.copy(pred))
+
+        for b in range(args.batch_size):
+            draw_box('./results/%d.jpg' % (32 * total + b), np.sum(x.numpy()[b, :, :, :], axis=2), true[b], pred[b])
 
         total += 1
         if total % 1000 == 0:
             avg_rate = (total * args.batch_size) / (time.time() - start)
             print('total: %d, rate: %f' % (total * args.batch_size, avg_rate))
 
-        true, pred = y.numpy(), out.numpy()
-        ids.append(np.array(id))
-        ys.append(np.copy(true))
-        preds.append(np.copy(pred))
-        # draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
-
+        
     print (total * args.batch_size)
     ids = np.concatenate(ids, axis=0).astype(np.float32)
     ys = np.concatenate(ys, axis=0).astype(np.float32)
     preds = np.concatenate(preds, axis=0).astype(np.float32)
 
-    # results = {}
-    # results['id'] = ids
-    # results['true'] = ys
-    # results['pred'] = preds
-    # np.save('results', results)
+    results = {}
+    results['id'] = ids
+    results['true'] = ys
+    results['pred'] = preds
+    np.save('results', results)
 
     calc_map(ids, ys, preds)
 

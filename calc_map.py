@@ -173,12 +173,11 @@ def calc_map(id, truth, pred):
         #####################
         #####################
         #####################
-        
-        # src_image = plt.imread('./dataset/images/%d.jpg' % (id[n]))
-
-        # dst_image = './results/%d.jpg' % (id[n])
-        # draw_box(dst_image, src_image, truth_n, pred_n)
-
+        '''
+        src_image = plt.imread('./dataset/images/%d.jpg' % (id[n]))
+        dst_image = './results/%d.jpg' % (id[n])
+        draw_box(dst_image, src_image, truth_n, pred_n)
+        '''
         #####################
 
     _coco_eval(truth_list, det_list, height=240, width=288)
