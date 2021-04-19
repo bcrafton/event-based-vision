@@ -70,26 +70,17 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                 if id < 8150: continue
 
                 events_list = events_list[-12:]
-            
-                frame1 = event2frame(events_list[0])                
-                frame1 = np.stack((frame1, frame1, frame1), axis=-1)
                 
-                frame12 = event2frame(events_list[11])
-                frame12 = np.stack((frame12, frame12, frame12), axis=-1)
-                
-                for box in boxes:
-                    box = np.array(list(box))
-                    box[1] = round(box[1] * (288 / 304))
-                    box[3] = round(box[3] * (288 / 304))
-                    draw_box(frame1,  box[1:5], box[5], None)
-                    draw_box(frame12, box[1:5], box[5], None)
+                for F in range(12):
+                    frame = event2frame(events_list[F])                
+                    frame = np.stack((frame, frame, frame), axis=-1)
+                    for box in boxes:
+                        box = np.array(list(box))
+                        box[1] = round(box[1] * (288 / 304))
+                        box[3] = round(box[3] * (288 / 304))
+                        draw_box(frame,  box[1:5], box[5], None)
+                        plt.imsave('./frames/%d_%d.png'   % (id, F), frame)
 
-                middle = np.zeros(shape=(240, 10, 3))
-                frame = np.concatenate((frame1, middle, frame12), axis=1)
-
-                plt.imsave('./frames/%d.png'   % (id), frame)
-                plt.imsave('./frames/%d_A.png' % (id), frame1)
-                plt.imsave('./frames/%d_B.png' % (id), frame12)
                 events_list = []
                 # id += 1
                 assert (id < 8160)

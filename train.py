@@ -9,7 +9,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--lr', type=float, default=1e-3)
-parser.add_argument('--gpu', type=int, default=0)
+parser.add_argument('--gpu', type=int, default=3)
 parser.add_argument('--train', type=int, default=1)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
 args = parser.parse_args()
@@ -174,17 +174,22 @@ def collect_filenames(path):
                 continue
             samples.append(os.path.join(subdir, file))
 
-    random.shuffle(samples)
+    # random.shuffle(samples)
+
+    def get_id(s):
+        return int(s.split('.tfrecord')[0].split('/')[-1])
+    samples.sort(key=get_id)
+    print (samples)
 
     return samples
 
 ####################################
 
-if args.train: filenames = collect_filenames('./dataset/train')
-else:          filenames = collect_filenames('./dataset/train')
+if args.train: filenames = collect_filenames('./dataset/train12')
+else:          filenames = collect_filenames('./dataset/val12')
 
 dataset = tf.data.TFRecordDataset(filenames)
-dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
+# dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
 dataset = dataset.map(extract_fn, num_parallel_calls=4)
 dataset = dataset.batch(args.batch_size, drop_remainder=True)
 # dataset = dataset.repeat()
@@ -275,12 +280,16 @@ if not args.train:
 
         out = predict(model, x)
         true, pred = y.numpy(), out.numpy()
-        ids.append(np.array(id))
-        ys.append(np.copy(true))
-        preds.append(np.copy(pred))
+        # ids.append(np.array(id))
+        # ys.append(np.copy(true))
+        # preds.append(np.copy(pred))
 
+        # '''
         for b in range(args.batch_size):
-            draw_box('./results/%d.jpg' % (32 * total + b), np.sum(x.numpy()[b, :, :, :], axis=2), true[b], pred[b])
+            # draw_box('./results/%d.png' % (32 * total + b), np.sum(x.numpy()[b, :, :, :], axis=2), true[b], pred[b])
+            draw_box('./results/%d.png' % (32 * total + b), np.sum(x.numpy()[b, :, :, 9:12], axis=2), true[b], pred[b])
+        # '''
+        # draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
 
         total += 1
         if total % 1000 == 0:
@@ -289,17 +298,17 @@ if not args.train:
 
         
     print (total * args.batch_size)
-    ids = np.concatenate(ids, axis=0).astype(np.float32)
-    ys = np.concatenate(ys, axis=0).astype(np.float32)
-    preds = np.concatenate(preds, axis=0).astype(np.float32)
+    # ids = np.concatenate(ids, axis=0).astype(np.float32)
+    # ys = np.concatenate(ys, axis=0).astype(np.float32)
+    # preds = np.concatenate(preds, axis=0).astype(np.float32)
 
-    results = {}
-    results['id'] = ids
-    results['true'] = ys
-    results['pred'] = preds
-    np.save('results', results)
+    # results = {}
+    # results['id'] = ids
+    # results['true'] = ys
+    # results['pred'] = preds
+    # np.save('results', results)
 
-    calc_map(ids, ys, preds)
+    # calc_map(ids, ys, preds)
 
 ####################################
 
