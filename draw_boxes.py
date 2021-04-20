@@ -102,26 +102,16 @@ def draw_box(name, image, truth, pred):
     conf = conf[order]
     cat = cat[order]
 
-    '''
-    ndet = len(box)
-    for d in range(ndet):
-        if conf[d] > 0.25:
-            pred_image = draw_box_help(pred_image, box[d], cat[d])
-    '''
     for d in range(ndet):
         pred_image = draw_box_help(pred_image, box[d], cat[d], color=(0,0,1))
-    '''
-    for d in range(ndet):
-        true_image = draw_box_help(true_image, box[d], cat[d], color=(0,0,1))
-    '''
+
     ############################################
-    # '''
+
     H, W, N = np.shape(true_image)
     mid = np.zeros(shape=(H, 5, N))
     concat = np.concatenate((true_image, mid, pred_image), axis=1)
     plt.imsave(name, concat, dpi=300)
-    # '''
-    # plt.imsave(name, true_image)
+
     ############################################
 
 def draw_box_help(image, box, cat, color):

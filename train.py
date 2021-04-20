@@ -284,12 +284,9 @@ if not args.train:
         # ys.append(np.copy(true))
         # preds.append(np.copy(pred))
 
-        # '''
         for b in range(args.batch_size):
-            # draw_box('./results/%d.png' % (32 * total + b), np.sum(x.numpy()[b, :, :, :], axis=2), true[b], pred[b])
-            draw_box('./results/%d.png' % (32 * total + b), np.sum(x.numpy()[b, :, :, 9:12], axis=2), true[b], pred[b])
-        # '''
-        # draw_box('./results/%d.jpg' % (total), np.sum(x.numpy()[0, :, :, :], axis=2), true[0], pred[0])
+            for f in range(12):
+                draw_box('./results/%d.png' % (32 * 12 * total + 12 * b + f), x.numpy()[b, :, :, f], true[b], pred[b])
 
         total += 1
         if total % 1000 == 0:
