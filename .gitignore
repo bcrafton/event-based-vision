@@ -8,3 +8,4 @@ nohup.out
 *.dat
 *.tfrecord
 *.png
+*.avi
