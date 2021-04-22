@@ -19,7 +19,7 @@ from src.visualize import vis_utils as vis
 from src.io.psee_loader import PSEELoader
 
 ##############################################
-
+'''
 def event2frame(events):
     x = events['x']
     y = events['y']
@@ -65,8 +65,28 @@ def event2frame(events):
     #############
 
     return frame
-
+'''
 ##############################################
+def event2frame(events):
+    x = events['x']
+    y = events['y']
+    p = events['p'] * 2 - 1
+    
+    frame = np.zeros(shape=(240, 304))
+    # frame[y, x] += np.ones_like(p)
+    for (j, i, k) in zip(y, x, p):
+        frame[j, i] += k
+
+    frame = frame - np.min(frame) + 1
+    frame = np.log10(frame)
+
+    frame = frame / np.max(frame)
+    frame = 1. - frame
+
+    frame = cv2.resize(frame, (288, 240))
+    return frame
+##############################################
+
 
 def _int64_feature(value):
     return tf.train.Feature(int64_list=tf.train.Int64List(value=[value]))
@@ -213,7 +233,7 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                 centered = np.mean(frames, axis=-1)
                 centered = centered - np.min(centered)
                 std = np.std(centered)
-                if std > 0.06: # look through dumped images and pick #
+                if std > 0.05: # look through dumped images and pick #
                     # 1
                     # frames = frames[:, :, -1]
                     # assert (np.shape(frames) == (240, 288))
@@ -244,7 +264,7 @@ def collect_filenames(path):
     return filenames
 
 ###########################################################
-
+'''
 train_path = './src_data/'
 
 records = []
@@ -254,9 +274,9 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-
-###########################################################
 '''
+###########################################################
+# '''
 train_path  = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/train/'
 val_path    = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/val/'
 
@@ -268,9 +288,9 @@ for record in records:
     print (record)
 
 play_files_parallel('./train', records, skip=0, delta_t=20000)
-'''
+# '''
 ###########################################################
-'''
+# '''
 test_path = '/home/bcrafton3/Data_HDD/prophesee-automotive-dataset/test/'
 
 records = []
@@ -280,7 +300,7 @@ for record in records:
     print (record)
 
 play_files_parallel('./val', records, skip=0, delta_t=20000)
-'''
+# '''
 ###########################################################
     
     
