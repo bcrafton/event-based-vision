@@ -19,54 +19,6 @@ from src.visualize import vis_utils as vis
 from src.io.psee_loader import PSEELoader
 
 ##############################################
-'''
-def event2frame(events):
-    x = events['x']
-    y = events['y']
-    p = events['p']
-
-    #############
-
-    # (1)
-    # tot = np.zeros((240, 304))
-    # tot[y, x] += 1
-    
-    # (2)
-    tot = np.zeros((240, 304))
-    for (j, i, k) in zip(y, x, p):
-        tot[j, i] += 1
-    tot = np.reshape(tot, -1)
-
-    # (3)
-    # address, count = np.unique(y * 288 + x)
-
-    #############
-
-    frame = np.reshape(tot, -1)
-    frame = stats.rankdata(frame, "average")
-    frame = np.reshape(frame, (240, 304))
-
-    #############
-
-    # plt.hist(frame.flatten(), bins=100)
-    # plt.savefig('hist.png')
-    # assert (False)
-
-    #############
-
-    frame = frame - np.min(frame)
-    frame = frame / (np.max(frame) + 1e-6)
-    frame = 1. - frame
-
-    #############
-
-    frame = cv2.resize(frame, (288, 240)) # cv2 takes things as {W,H} even when array is sized {H,W}
-
-    #############
-
-    return frame
-'''
-##############################################
 def event2frame(events):
     x = events['x']
     y = events['y']
@@ -83,7 +35,8 @@ def event2frame(events):
     frame = frame / np.max(frame)
     frame = 1. - frame
 
-    frame = cv2.resize(frame, (288, 240))
+    # frame = cv2.resize(frame, (288, 240))
+    frame = frame[:, 0:288]
     return frame
 ##############################################
 
@@ -218,8 +171,8 @@ def play_files_parallel(path, td_files, labels=None, delta_t=50000, skip=0):
                 boxes_np = []
                 for box in boxes:
                     # t, x, y, w, h
-                    box[1] = round(box[1] * (288 / 304))
-                    box[3] = round(box[3] * (288 / 304))
+                    box[1] = round(box[1])
+                    box[3] = round(box[3])
                     box_np = np.array(list(box))
                     boxes_np.append(box_np)
                 boxes_np = np.array(boxes_np)
@@ -287,7 +240,7 @@ records = records + collect_filenames(val_path)
 for record in records:
     print (record)
 
-play_files_parallel('./train', records, skip=0, delta_t=20000)
+play_files_parallel('./train', records, skip=0, delta_t=50000)
 # '''
 ###########################################################
 # '''
@@ -299,7 +252,7 @@ records = records + collect_filenames(test_path)
 for record in records:
     print (record)
 
-play_files_parallel('./val', records, skip=0, delta_t=20000)
+play_files_parallel('./val', records, skip=0, delta_t=50000)
 # '''
 ###########################################################
     

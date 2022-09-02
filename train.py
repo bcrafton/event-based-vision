@@ -8,7 +8,7 @@ import sys
 parser = argparse.ArgumentParser()
 parser.add_argument('--epochs', type=int, default=100)
 parser.add_argument('--batch_size', type=int, default=32)
-parser.add_argument('--lr', type=float, default=1e-3)
+parser.add_argument('--lr', type=float, default=1e-2)
 parser.add_argument('--gpu', type=int, default=3)
 parser.add_argument('--train', type=int, default=1)
 # parser.add_argument('--name', type=str, default="imagenet_weights")
@@ -48,7 +48,7 @@ from calc_map import calc_map
 
 if args.train:
     # weights = None
-    weights = np.load('models/x.npy', allow_pickle=True).item()
+    weights = np.load('trained_weights.npy', allow_pickle=True).item()
     # weights = np.load('models/resnet18.npy', allow_pickle=True).item()
     # weights = np.load('models/resnet_yolo_anchor_1.npy', allow_pickle=True).item()
     # weights = np.load('models/resnet_yolo_anchor_10x12.npy', allow_pickle=True).item()
@@ -56,7 +56,7 @@ if args.train:
     dropout = True
     # dropout = False
 else:
-    weights = np.load('12_weights.npy', allow_pickle=True).item()
+    weights = np.load('trained_weights1.npy', allow_pickle=True).item()
     dropout = False
 
 ####################################
@@ -176,17 +176,19 @@ def collect_filenames(path):
 
     # random.shuffle(samples)
 
+    # '''
     def get_id(s):
         return int(s.split('.tfrecord')[0].split('/')[-1])
     samples.sort(key=get_id)
     print (samples)
+    # '''
 
     return samples
 
 ####################################
 
-if args.train: filenames = collect_filenames('./dataset/train12')
-else:          filenames = collect_filenames('./dataset/val12')
+if args.train: filenames = collect_filenames('./dataset/train')
+else:          filenames = collect_filenames('./dataset/train')
 
 dataset = tf.data.TFRecordDataset(filenames)
 # dataset = dataset.shuffle(buffer_size=5000, reshuffle_each_iteration=True)
@@ -211,7 +213,7 @@ if args.train:
         start = time.time()
 
         for (id, x, y) in dataset:
-
+            # print(total)
             out, loss, losses, grad = gradients(model, x, y)
             (yx_loss, hw_loss, obj_loss, no_obj_loss, cat_loss) = losses
             '''
@@ -229,7 +231,7 @@ if args.train:
             total_loss        += loss.numpy()
             total += 1
 
-            if total % 1000 == 0:
+            if total % 100 == 0:
                 yx_loss     = int(total_yx_loss     / total_loss * 100)
                 hw_loss     = int(total_hw_loss     / total_loss * 100)
                 obj_loss    = int(total_obj_loss    / total_loss * 100)
@@ -257,9 +259,10 @@ if args.train and (args.epochs == 0):
     total = 0
     start = time.time()
     for (id, x, y) in dataset:
+        print (total)
         out = collect(model, x)
         total += 1
-        if total % 1000 == 0:
+        if total % 100 == 0:
             avg_rate = (total * args.batch_size) / (time.time() - start)
             print('total: %d, rate: %f' % (total * args.batch_size, avg_rate))
 
@@ -277,17 +280,18 @@ if not args.train:
     preds = []
 
     for (id, x, y) in dataset:
-
+        print (total)
         out = predict(model, x)
         true, pred = y.numpy(), out.numpy()
         # ids.append(np.array(id))
         # ys.append(np.copy(true))
         # preds.append(np.copy(pred))
-
+        # '''
+        img = x.numpy()
         for b in range(args.batch_size):
             for f in range(12):
-                draw_box('./results/%d.png' % (32 * 12 * total + 12 * b + f), x.numpy()[b, :, :, f], true[b], pred[b])
-
+                draw_box('./results/%d.png' % (32 * 12 * total + 12 * b + f), img[b, :, :, f], true[b], pred[b])
+        # '''
         total += 1
         if total % 1000 == 0:
             avg_rate = (total * args.batch_size) / (time.time() - start)
